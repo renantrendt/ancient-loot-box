@@ -22,7 +22,7 @@ const items = {
         { name: "Heineken Pack", image: "10-104218_heineken-beer-bottles-6-pack-330ml-removebg-preview.png" }
     ],
     mythic: [
-        { name: "N.U.K.E", image: "nuke.svg" },
+        { name: "N.U.K.E", image: "NukeIcon.png" },
         { name: "Diablo Sword", image: "2397813522-removebg-preview.png" }
     ]
 };
