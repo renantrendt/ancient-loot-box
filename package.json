@@ -1,0 +1,14 @@
+{ 
+  "name": "ancient-loot-box",
+  "version": "1.0.0",
+  "description": "A web application for the Ancient Loot Box project.",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server ."
+  },
+  "dependencies": {
+    "http-server": "^0.12.3"
+  },
+  "author": "Your Name",
+  "license": "ISC"
+}

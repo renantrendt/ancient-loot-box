@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ancient Loot Box</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="inventory-panel">
+            <h2>Collected Items</h2>
+            <ul id="inventory-list">
+                <!-- Collected items will appear here -->
+            </ul>
+            <div class="conversions">
+                <h3>Conversions</h3>
+                <ul>
+                    <li class="conversion-item" data-item="helmet" data-amount="10" onclick="handleConversion('helmet', 10)">10 Helmets = 1 Scythe</li>
+                    <li class="conversion-item" data-item="bomb" data-amount="30" onclick="handleConversion('bomb', 30)">30 Bombs = 1 N.U.K.E</li>
+                    <li class="conversion-item" data-item="beer" data-amount="24" onclick="handleConversion('beer', 24)">24 Beers = 1 Heineken Pack</li>
+                    <li class="conversion-item" data-item="sword" data-amount="10" onclick="handleConversion('sword', 10)">10 Swords = 5 Double Swords</li>
+                    <li class="conversion-item" data-item="double-sword" data-amount="30" onclick="handleConversion('double-sword', 30)">30 Double Swords = 1 Diablo Sword</li>
+                    <li class="conversion-item" data-item="sniper-rifle" data-amount="4" onclick="handleConversion('sniper-rifle', 4)">4 Sniper Rifles = 1 Bazooka</li>
+                    <li class="conversion-item" data-item="shotgun" data-amount="2" onclick="handleConversion('shotgun', 2)">2 Shot Guns = 1 Machine Gun</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="loot-box-container">
+            <div class="chest-wrapper">
+                <div id="epic-overlay" class="epic-overlay hidden"></div>
+                <div id="loot-box" class="loot-box closed">
+                    <!-- Loot box image/animation will go here -->
+                </div>
+            </div>
+            <button id="open-box-btn">Open Loot Box</button>
+            <div id="item-result" class="hidden">
+                <h3 id="item-name"></h3>
+                <p id="item-rarity"></p>
+                <div id="item-image"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

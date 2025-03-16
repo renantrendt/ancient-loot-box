@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100px" height="100px" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="30" fill="#E74C3C"/>
+    <circle cx="50" cy="50" r="25" fill="#C0392B"/>
+    <circle cx="50" cy="50" r="15" fill="#2C3E50"/>
+    <path d="M50,20 L50,35 M50,65 L50,80 M20,50 L35,50 M65,50 L80,50" stroke="#F1C40F" stroke-width="5"/>
+    <circle cx="50" cy="50" r="10" fill="#F1C40F"/>
+    <text x="50" y="54" font-family="Arial" font-size="10" text-anchor="middle" fill="#2C3E50">NUKE</text>
+</svg>
