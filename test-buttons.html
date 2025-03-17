@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            min-height: 100px;
+            width: 80%;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Button Test</h1>
+    <div>
+        <button id="open-box-btn">Open Loot Box</button>
+        <button id="bet-btn">Bet</button>
+    </div>
+    <div id="result">Click a button to see the result</div>
+
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded');
+            
+            // Get button elements
+            const openBoxBtn = document.getElementById('open-box-btn');
+            const betBtn = document.getElementById('bet-btn');
+            const resultDiv = document.getElementById('result');
+            
+            console.log('Open box button:', openBoxBtn);
+            console.log('Bet button:', betBtn);
+            
+            // Add event listener to Open Loot Box button
+            openBoxBtn.addEventListener('click', function() {
+                console.log('Open box button clicked');
+                resultDiv.textContent = 'Open Loot Box button was clicked at ' + new Date().toLocaleTimeString();
+            });
+            
+            // Add event listener to Bet button
+            betBtn.addEventListener('click', function() {
+                console.log('Bet button clicked');
+                resultDiv.textContent = 'Bet button was clicked at ' + new Date().toLocaleTimeString();
+            });
+        });
+    </script>
+</body>
+</html>
