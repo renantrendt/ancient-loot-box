@@ -43,6 +43,36 @@ body {
     align-items: center;
 }
 
+.item-details {
+    display: flex;
+    flex-direction: column;
+    margin-left: 10px;
+}
+
+.item-name {
+    font-weight: bold;
+}
+
+.item-price {
+    font-size: 0.9em;
+    color: #f1c40f;
+}
+
+.total-value {
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #f1c40f;
+}
+
+.total-value span {
+    color: #f1c40f;
+    font-size: 1.2em;
+}
+
 #inventory-list li .item-icon {
     width: 30px;
     height: 30px;
@@ -169,6 +199,24 @@ body {
     border: 1px solid #2c3e50;
     background-color: #2c3e50;
     color: white;
+}
+
+.input-with-symbol {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-symbol input {
+    padding-right: 25px;
+}
+
+.currency-symbol {
+    position: absolute;
+    right: 10px;
+    font-size: 16px;
+    color: #f1c40f;
+    font-weight: bold;
 }
 
 .signature-section {

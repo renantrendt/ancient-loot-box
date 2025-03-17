@@ -1,31 +1,40 @@
-// Define the items with their rarities
+// Define the items with their rarities and prices
 const items = {
     common: [
-        { name: "Wooden Sword", image: "wooden-sword.png" },
-        { name: "Beer", image: "images__2_-removebg-preview.png" }
+        { name: "Wooden Sword", image: "wooden-sword.png", price: 30 },
+        { name: "Beer", image: "images__2_-removebg-preview.png", price: 5 }
     ],
     rare: [
-        { name: "Sword", image: "92BKHNH_1__07640-removebg-preview.png" },
-        { name: "Helmet", image: "images__1_-removebg-preview.png" }
+        { name: "Sword", image: "92BKHNH_1__07640-removebg-preview.png", price: 100 },
+        { name: "Helmet", image: "images__1_-removebg-preview.png", price: 250 }
     ],
     epic: [
-        { name: "Shield", image: "s-l1200-removebg-preview.png" },
-        { name: "Double Sword", image: "51G5FrtyUHL._AC_UF1000_1000_QL80_-removebg-preview.png" },
-        { name: "Bomb", image: "8p5fq6br1mub1-removebg-preview.png" }
+        { name: "Shield", image: "s-l1200-removebg-preview.png", price: 300 },
+        { name: "Double Sword", image: "51G5FrtyUHL._AC_UF1000_1000_QL80_-removebg-preview.png", price: 270 },
+        { name: "Bomb", image: "8p5fq6br1mub1-removebg-preview.png", price: 1000 }
     ],
     legendary: [
-        { name: "Shot Gun", image: "Winchester-SXP-Field-Compact-20-Gauge-26-Barrel-Shotgun-048702004711_image1__23692-removebg-preview.png" },
-        { name: "Machine Gun", image: "PEO_M249_Para_ACOG-removebg-preview.png" },
-        { name: "Scythe", image: "png-clipart-darksiders-ii-death-scythe-weapon-reaper-weapon-game-weapon-thumbnail-removebg-preview.png" },
-        { name: "Bazooka", image: "s-l400-removebg-preview.png" },
-        { name: "Sniper Rifle", image: "sniper.webp" },
-        { name: "Heineken Pack", image: "10-104218_heineken-beer-bottles-6-pack-330ml-removebg-preview.png" }
+        { name: "Shot Gun", image: "Winchester-SXP-Field-Compact-20-Gauge-26-Barrel-Shotgun-048702004711_image1__23692-removebg-preview.png", price: 3000 },
+        { name: "Machine Gun", image: "PEO_M249_Para_ACOG-removebg-preview.png", price: 7000 },
+        { name: "Scythe", image: "png-clipart-darksiders-ii-death-scythe-weapon-reaper-weapon-game-weapon-thumbnail-removebg-preview.png", price: 30000 },
+        { name: "Bazooka", image: "s-l400-removebg-preview.png", price: 13000 },
+        { name: "Sniper Rifle", image: "sniper.webp", price: 30000 },
+        { name: "Heineken Pack", image: "10-104218_heineken-beer-bottles-6-pack-330ml-removebg-preview.png", price: 50 }
     ],
     mythic: [
-        { name: "N.U.K.E", image: "NukeIcon.png" },
-        { name: "Diablo Sword", image: "2397813522-removebg-preview.png" }
+        { name: "N.U.K.E", image: "NukeIcon.png", price: 1000000 },
+        { name: "Diablo Sword", image: "2397813522-removebg-preview.png", price: 7000000 }
     ]
 };
+
+// Function to get item details by name
+function getItemByName(name) {
+    for (const rarity in items) {
+        const found = items[rarity].find(item => item.name === name);
+        if (found) return found;
+    }
+    return null;
+}
 
 // Define the drop rates for each rarity
 const dropRates = {
@@ -73,6 +82,17 @@ function getRandomItem(itemArray) {
     return itemArray[randomIndex];
 }
 
+// Function to format price with K and M for thousands and millions
+function formatPrice(price) {
+    if (price >= 1000000) {
+        return (price / 1000000).toFixed(1) + 'M$';
+    } else if (price >= 1000) {
+        return (price / 1000).toFixed(1) + 'K$';
+    } else {
+        return price + '$';
+    }
+}
+
 // Function to get a random item based on rarity chances
 function getRandomLoot(isBetting = false) {
     // Check each rarity from highest to lowest
@@ -93,7 +113,12 @@ function getRandomLoot(isBetting = false) {
 // Function to add item to inventory
 function addToInventory(itemName, rarity) {
     if (!inventory[itemName]) {
-        inventory[itemName] = { count: 0, rarity: rarity };
+        const itemDetails = getItemByName(itemName);
+        inventory[itemName] = { 
+            count: 0, 
+            rarity: rarity,
+            price: itemDetails ? itemDetails.price : 0
+        };
     }
     inventory[itemName].count++;
     
@@ -120,6 +145,9 @@ function updateInventoryDisplay() {
         return a[0].localeCompare(b[0]);
     });
     
+    // Calculate total inventory value
+    let totalValue = 0;
+    
     sortedItems.forEach(([name, data]) => {
         const li = document.createElement('li');
         li.classList.add(data.rarity);
@@ -128,13 +156,46 @@ function updateInventoryDisplay() {
         itemIcon.classList.add('item-icon');
         itemIcon.style.backgroundImage = `url('images/${items[data.rarity].find(item => item.name === name)?.image || 'default.png'}')`;
         
-        const itemText = document.createElement('span');
-        itemText.textContent = `${name} x${data.count}`;
+        // Get item price
+        const itemDetails = getItemByName(name);
+        const itemPrice = itemDetails ? itemDetails.price : 0;
+        
+        // Calculate total value for this item
+        const totalItemValue = itemPrice * data.count;
+        
+        // Add to total inventory value
+        totalValue += totalItemValue;
+        
+        // Create item details container
+        const itemDetailsDiv = document.createElement('div');
+        itemDetailsDiv.classList.add('item-details');
+        
+        // Create item name element
+        const itemName = document.createElement('span');
+        itemName.classList.add('item-name');
+        itemName.textContent = `${name} x${data.count}`;
+        
+        // Create item price element
+        const itemPriceElement = document.createElement('span');
+        itemPriceElement.classList.add('item-price');
+        itemPriceElement.textContent = `${formatPrice(itemPrice)} ${data.count > 1 ? `(Total: ${formatPrice(totalItemValue)})` : ''}`;
+        
+        // Append elements
+        itemDetailsDiv.appendChild(itemName);
+        itemDetailsDiv.appendChild(itemPriceElement);
         
         li.appendChild(itemIcon);
-        li.appendChild(itemText);
+        li.appendChild(itemDetailsDiv);
         inventoryList.appendChild(li);
     });
+    
+    // Add total inventory value at the top
+    if (sortedItems.length > 0) {
+        const totalValueElement = document.createElement('div');
+        totalValueElement.className = 'total-value';
+        totalValueElement.innerHTML = `Total Inventory Value: <span>${formatPrice(totalValue)}</span>`;
+        inventoryList.insertBefore(totalValueElement, inventoryList.firstChild);
+    }
 }
 
 // Simple function to directly add items for testing
@@ -144,6 +205,73 @@ function addItemDirectly(itemName, rarity, count) {
     }
     alert(`Added ${count} ${itemName}(s) to your inventory!`);
 }
+
+// Function to remove items from inventory
+function removeItem(itemName, count = 1) {
+    // Check if the item exists in inventory
+    if (!inventory[itemName]) {
+        console.log(`Error: ${itemName} not found in inventory`);
+        return false;
+    }
+    
+    // Check if we have enough of the item
+    if (inventory[itemName].count < count) {
+        console.log(`Error: Not enough ${itemName} in inventory. You have ${inventory[itemName].count} but tried to remove ${count}`);
+        return false;
+    }
+    
+    // Remove the items
+    inventory[itemName].count -= count;
+    
+    // If count reaches 0, remove the item entirely
+    if (inventory[itemName].count <= 0) {
+        delete inventory[itemName];
+    }
+    
+    // Save to local storage
+    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+    
+    // Update the inventory display
+    updateInventoryDisplay();
+    
+    console.log(`Successfully removed ${count} ${itemName}(s) from your inventory`);
+    return true;
+}
+
+// Make functions available in the global scope for console use
+window.removeItem = removeItem;
+
+// Create a global object for console commands
+window.lootBoxCommands = {
+    removeItem: removeItem,
+    addItem: function(itemName, rarity, count = 1) {
+        addItemDirectly(itemName, rarity, count);
+    },
+    clearInventory: function() {
+        inventory = {};
+        localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+        updateInventoryDisplay();
+        console.log('Inventory cleared');
+    }
+};
+
+// Create a simpler global variable for console use
+window.removeItems = function(itemName, count = 1) {
+    return removeItem(itemName, count);
+};
+
+window.addItems = function(itemName, rarity, count = 1) {
+    addItemDirectly(itemName, rarity, count);
+    return true;
+};
+
+window.clearItems = function() {
+    inventory = {};
+    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+    updateInventoryDisplay();
+    console.log('Inventory cleared');
+    return true;
+};
 
 // Function to handle conversions - simplified approach
 function handleConversion(itemType, amount) {

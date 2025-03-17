@@ -52,7 +52,10 @@
             <h2>Place Your Bet</h2>
             <div class="form-group">
                 <label for="bet-amount">Cash</label>
-                <input type="text" id="bet-amount">
+                <div class="input-with-symbol">
+                    <input type="text" id="bet-amount">
+                    <span class="currency-symbol">$</span>
+                </div>
             </div>
             <div class="form-group">
                 <label for="bet-item">What item do you think you will get?</label>
@@ -94,5 +97,54 @@
     </div>
     
     <script src="script.js"></script>
+    <script>
+        // Direct console commands for inventory management
+        function removeItems(itemName, count = 1) {
+            // Check if the item exists in inventory
+            if (!inventory[itemName]) {
+                console.log(`Error: ${itemName} not found in inventory`);
+                return false;
+            }
+            
+            // Check if we have enough of the item
+            if (inventory[itemName].count < count) {
+                console.log(`Error: Not enough ${itemName} in inventory. You have ${inventory[itemName].count} but tried to remove ${count}`);
+                return false;
+            }
+            
+            // Remove the items
+            inventory[itemName].count -= count;
+            
+            // If count reaches 0, remove the item entirely
+            if (inventory[itemName].count <= 0) {
+                delete inventory[itemName];
+            }
+            
+            // Save to local storage
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            
+            // Update the inventory display
+            updateInventoryDisplay();
+            
+            console.log(`Successfully removed ${count} ${itemName}(s) from your inventory`);
+            return true;
+        }
+        
+        function addItems(itemName, rarity, count = 1) {
+            for (let i = 0; i < count; i++) {
+                addToInventory(itemName, rarity);
+            }
+            console.log(`Added ${count} ${itemName}(s) to your inventory!`);
+            return true;
+        }
+        
+        function clearItems() {
+            inventory = {};
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            updateInventoryDisplay();
+            console.log('Inventory cleared');
+            return true;
+        }
+    </script>
 </body>
 </html>
