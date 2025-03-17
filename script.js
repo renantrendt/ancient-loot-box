@@ -36,6 +36,18 @@ const dropRates = {
     mythic: 0.01
 };
 
+// Define betting drop rates (half the normal rates)
+const bettingDropRates = {
+    common: 0.35,
+    rare: 0.25,
+    epic: 0.15,
+    legendary: 0.05,
+    mythic: 0.005
+};
+
+// Track consecutive losses
+let consecutiveLosses = 0;
+
 // Initialize inventory
 let inventory = JSON.parse(localStorage.getItem('lootBoxInventory')) || {};
 
@@ -50,8 +62,9 @@ const inventoryList = document.getElementById('inventory-list');
 const epicOverlay = document.getElementById('epic-overlay');
 
 // Function to determine if an item drops based on its rarity
-function doesItemDrop(rarity) {
-    return Math.random() < dropRates[rarity];
+function doesItemDrop(rarity, isBetting = false) {
+    const rates = isBetting ? bettingDropRates : dropRates;
+    return Math.random() < rates[rarity];
 }
 
 // Function to select a random item from a given array
@@ -61,15 +74,15 @@ function getRandomItem(itemArray) {
 }
 
 // Function to get a random item based on rarity chances
-function getRandomLoot() {
+function getRandomLoot(isBetting = false) {
     // Check each rarity from highest to lowest
-    if (doesItemDrop('mythic')) {
+    if (doesItemDrop('mythic', isBetting)) {
         return { item: getRandomItem(items.mythic), rarity: 'mythic' };
-    } else if (doesItemDrop('legendary')) {
+    } else if (doesItemDrop('legendary', isBetting)) {
         return { item: getRandomItem(items.legendary), rarity: 'legendary' };
-    } else if (doesItemDrop('epic')) {
+    } else if (doesItemDrop('epic', isBetting)) {
         return { item: getRandomItem(items.epic), rarity: 'epic' };
-    } else if (doesItemDrop('rare')) {
+    } else if (doesItemDrop('rare', isBetting)) {
         return { item: getRandomItem(items.rare), rarity: 'rare' };
     } else {
         // Default to common if nothing else drops
@@ -276,15 +289,15 @@ document.addEventListener('DOMContentLoaded', () => {
             itemRarity.className = loot.rarity;
             itemImage.style.backgroundImage = `url('images/${loot.item.image}')`;            
             
-            // Show epic overlay if epic item
-            if (loot.rarity === 'epic') {
+            // Show appropriate overlay based on rarity
+            epicOverlay.classList.add('hidden'); // First hide for all cases
+            
+            // Only show for specific rarities
+            if (loot.rarity === 'rare') {
+                epicOverlay.style.backgroundImage = "url('images/smaller-image.png')";
                 epicOverlay.classList.remove('hidden');
-            } else if (loot.rarity === 'common') {
-                epicOverlay.style.backgroundImage = "url('images/Screenshot_2025-03-16_at_11.02.49_AM-removebg-preview.png')";
-                epicOverlay.classList.remove('hidden');
-            } else {
-                epicOverlay.classList.add('hidden');
             }
+            // Epic and common items will have no background image
             
             // Show the result
             itemResult.classList.remove('hidden');
@@ -306,4 +319,239 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the inventory display on page load
     updateInventoryDisplay();
+    
+    // Bet button functionality
+    const betBtn = document.getElementById('bet-btn');
+    const betPopup = document.getElementById('bet-popup');
+    const cancelBetBtn = document.getElementById('cancel-bet');
+    const confirmBetBtn = document.getElementById('confirm-bet');
+    const clearSignatureBtn = document.getElementById('clear-signature');
+    const signatureCanvas = document.getElementById('signature-canvas');
+    
+    // Initialize signature pad
+    let ctx = signatureCanvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    // Set canvas size properly
+    function resizeCanvas() {
+        const container = signatureCanvas.parentElement;
+        signatureCanvas.width = container.clientWidth;
+        signatureCanvas.height = 150;
+        
+        // Set canvas background to white
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+    
+    // Clear signature
+    function clearSignature() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+        hasSignature = false;
+    }
+    
+    // Check if the signature pad has been drawn on
+    function isSignatureEmpty() {
+        const imageData = ctx.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height).data;
+        for (let i = 0; i < imageData.length; i += 4) {
+            // Check if any pixel is not white
+            if (imageData[i] !== 255 || imageData[i+1] !== 255 || imageData[i+2] !== 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Track if signature has been drawn
+    let hasSignature = false;
+    
+    // Drawing functions
+    function startDrawing(e) {
+        isDrawing = true;
+        [lastX, lastY] = getMousePos(signatureCanvas, e);
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const [currentX, currentY] = getMousePos(signatureCanvas, e);
+        
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        
+        [lastX, lastY] = [currentX, currentY];
+        
+        // Mark that signature has been drawn
+        hasSignature = true;
+    }
+    
+    function stopDrawing() {
+        isDrawing = false;
+    }
+    
+    // Get mouse position relative to canvas
+    function getMousePos(canvas, e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        let clientX, clientY;
+        
+        // Handle both mouse and touch events
+        if (e.type.includes('touch')) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        return [
+            (clientX - rect.left) * scaleX,
+            (clientY - rect.top) * scaleY
+        ];
+    }
+    
+    // Event listeners for signature pad
+    signatureCanvas.addEventListener('mousedown', startDrawing);
+    signatureCanvas.addEventListener('mousemove', draw);
+    signatureCanvas.addEventListener('mouseup', stopDrawing);
+    signatureCanvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch support
+    signatureCanvas.addEventListener('touchstart', startDrawing);
+    signatureCanvas.addEventListener('touchmove', draw);
+    signatureCanvas.addEventListener('touchend', stopDrawing);
+    
+    // Show bet popup
+    betBtn.addEventListener('click', () => {
+        betPopup.style.display = 'flex';
+        resizeCanvas();
+    });
+    
+    // Cancel bet
+    cancelBetBtn.addEventListener('click', function() {
+        betPopup.style.display = 'none';
+    });
+    
+    // Also close popup when clicking outside
+    betPopup.addEventListener('click', function(e) {
+        if (e.target === betPopup) {
+            betPopup.style.display = 'none';
+        }
+    });
+    
+    // Clear signature
+    clearSignatureBtn.addEventListener('click', clearSignature);
+    
+    // Result popup elements
+    const resultPopup = document.getElementById('result-popup');
+    const resultTitle = document.getElementById('result-title');
+    const resultMessage = document.getElementById('result-message');
+    const tryAgainBtn = document.getElementById('try-again-btn');
+    const continueBtn = document.getElementById('continue-btn');
+    const gameOverScreen = document.getElementById('game-over');
+    const countdown = document.getElementById('countdown');
+    
+    // Confirm bet
+    confirmBetBtn.addEventListener('click', () => {
+        const betAmount = document.getElementById('bet-amount').value;
+        const betItem = document.getElementById('bet-item').value.toLowerCase();
+        
+        if (!betAmount || !betItem) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        // Check if signature is empty
+        if (isSignatureEmpty()) {
+            alert("Sorry, I'm not taking the blame if you die. Put your signature to go ahead.");
+            return;
+        }
+        
+        // Hide bet popup
+        betPopup.style.display = 'none';
+        
+        // Get a random item with reduced chances (betting mode)
+        const loot = getRandomLoot(true);
+        
+        // Check if the player won (exact item name match)
+        const allItems = [...items.common, ...items.rare, ...items.epic, ...items.legendary, ...items.mythic];
+        const betItemExists = allItems.some(item => item.name.toLowerCase() === betItem);
+        
+        let won = false;
+        if (betItemExists) {
+            // Check if they got the exact item they bet on
+            won = loot.item.name.toLowerCase() === betItem;
+        } else {
+            // If they entered a rarity instead of an item name
+            const rarities = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+            if (rarities.includes(betItem)) {
+                won = loot.rarity === betItem;
+            }
+        }
+        
+        if (won) {
+            // Player won
+            resultTitle.textContent = 'You Won!';
+            resultTitle.style.color = '#2ecc71';
+            resultMessage.innerHTML = `Congratulations! You got a ${loot.item.name} (${loot.rarity}).<br>Your soul is safe... for now.`;
+            continueBtn.style.display = 'block';
+            tryAgainBtn.style.display = 'block';
+            consecutiveLosses = 0; // Reset consecutive losses
+        } else {
+            // Player lost
+            consecutiveLosses++;
+            
+            if (consecutiveLosses >= 2) {
+                // Game over after 2 consecutive losses
+                gameOverScreen.style.display = 'flex';
+                
+                // Countdown to close the window
+                let secondsLeft = 5;
+                const countdownInterval = setInterval(() => {
+                    secondsLeft--;
+                    countdown.textContent = secondsLeft;
+                    
+                    if (secondsLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        window.close(); // Attempt to close the window
+                        // If window.close() doesn't work (due to browser security)
+                        document.body.innerHTML = '<div style="height:100vh;display:flex;justify-content:center;align-items:center;background:#000;color:#e74c3c;font-size:48px;">Your soul is mine...</div>';
+                    }
+                }, 1000);
+                
+                return;
+            }
+            
+            resultTitle.textContent = 'You Lost!';
+            resultTitle.style.color = '#e74c3c';
+            resultMessage.innerHTML = `You got a ${loot.item.name} (${loot.rarity}).<br>You lost your soul... Want to try betting again?<br>If you lose again, I will take your soul forever.`;
+            continueBtn.style.display = 'none';
+            tryAgainBtn.style.display = 'block';
+        }
+        
+        // Show result popup
+        resultPopup.style.display = 'flex';
+    });
+    
+    // Try again button
+    tryAgainBtn.addEventListener('click', () => {
+        resultPopup.style.display = 'none';
+        betPopup.style.display = 'flex';
+        resizeCanvas();
+    });
+    
+    // Continue playing button
+    continueBtn.addEventListener('click', () => {
+        resultPopup.style.display = 'none';
+    });
 });

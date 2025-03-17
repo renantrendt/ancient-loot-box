@@ -25,6 +25,9 @@
                     <li class="conversion-item" data-item="shotgun" data-amount="2" onclick="handleConversion('shotgun', 2)">2 Shot Guns = 1 Machine Gun</li>
                 </ul>
             </div>
+            <div class="bet-section">
+                <button id="bet-btn">Bet</button>
+            </div>
         </div>
         
         <div class="loot-box-container">
@@ -40,6 +43,53 @@
                 <p id="item-rarity"></p>
                 <div id="item-image"></div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Bet Popup Dialog -->
+    <div id="bet-popup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <h2>Place Your Bet</h2>
+            <div class="form-group">
+                <label for="bet-amount">Cash</label>
+                <input type="text" id="bet-amount">
+            </div>
+            <div class="form-group">
+                <label for="bet-item">What item do you think you will get?</label>
+                <input type="text" id="bet-item">
+            </div>
+            <div class="signature-section">
+                <p class="small-text">If you lose this, I will get your soul.</p>
+                <div id="signature-pad">
+                    <canvas id="signature-canvas"></canvas>
+                </div>
+                <p class="signature-label">Sign here</p>
+            </div>
+            <div class="popup-buttons">
+                <button id="clear-signature">Clear Signature</button>
+                <button id="confirm-bet">Confirm Bet</button>
+                <button id="cancel-bet">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Win/Lose Popup -->
+    <div id="result-popup" class="popup-overlay" style="display: none;">
+        <div class="popup-content result-content">
+            <h2 id="result-title">Result</h2>
+            <p id="result-message"></p>
+            <div class="popup-buttons">
+                <button id="try-again-btn">Try Again</button>
+                <button id="continue-btn">Continue Playing</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Over Screen -->
+    <div id="game-over" class="game-over-screen" style="display: none;">
+        <div class="game-over-content">
+            <h1>You lost your soul...</h1>
+            <p>The game will close in <span id="countdown">5</span> seconds.</p>
         </div>
     </div>
     
