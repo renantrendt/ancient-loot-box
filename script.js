@@ -82,9 +82,11 @@ function getRandomItem(itemArray) {
     return itemArray[randomIndex];
 }
 
-// Function to format price with K and M for thousands and millions
+// Function to format price with K, M, and B for thousands, millions, and billions
 function formatPrice(price) {
-    if (price >= 1000000) {
+    if (price >= 1000000000) {
+        return (price / 1000000000).toFixed(1) + 'B$';
+    } else if (price >= 1000000) {
         return (price / 1000000).toFixed(1) + 'M$';
     } else if (price >= 1000) {
         return (price / 1000).toFixed(1) + 'K$';
