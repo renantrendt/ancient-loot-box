@@ -660,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (consecutiveLosses >= 2) {
                 // Game over after 2 consecutive losses
                 gameOverScreen.style.display = 'flex';
+                resultPopup.style.display = 'none';
                 
                 // Countdown to close the window
                 let secondsLeft = 5;
@@ -669,8 +670,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (secondsLeft <= 0) {
                         clearInterval(countdownInterval);
-                        window.close(); // Attempt to close the window
-                        // If window.close() doesn't work (due to browser security)
+                        // Try multiple methods to close the tab
+                        window.close();
+                        window.location.href = 'about:blank';
+                        window.open('', '_self').close();
+                        // If all close attempts fail, show game over screen
                         document.body.innerHTML = '<div style="height:100vh;display:flex;justify-content:center;align-items:center;background:#000;color:#e74c3c;font-size:48px;">Your soul is mine...</div>';
                     }
                 }, 1000);
