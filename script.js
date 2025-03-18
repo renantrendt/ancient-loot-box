@@ -129,14 +129,21 @@ function addToInventory(itemName, rarity) {
     updateInventoryDisplay();
 }
 
-// Function to calculate total inventory value
+// Function to calculate total inventory value - fixed to prevent doubling
 function calculateTotalInventoryValue() {
+    // Reset the total value
     let totalValue = 0;
-    Object.entries(inventory).forEach(([name, data]) => {
+    
+    // Loop through each item in the inventory only once
+    for (const [name, data] of Object.entries(inventory)) {
+        // Get the item details
         const itemDetails = getItemByName(name);
-        const itemPrice = itemDetails ? itemDetails.price : 0;
-        totalValue += itemPrice * data.count;
-    });
+        if (!itemDetails) continue;
+        
+        // Add the item's value to the total (price × count)
+        totalValue += itemDetails.price * data.count;
+    }
+    
     return totalValue;
 }
 
@@ -156,8 +163,8 @@ function updateInventoryDisplay() {
         return a[0].localeCompare(b[0]);
     });
     
-    // Calculate total inventory value
-    let totalValue = calculateTotalInventoryValue();
+    // Get the total inventory value once
+    const totalValue = calculateTotalInventoryValue();
     
     sortedItems.forEach(([name, data]) => {
         const li = document.createElement('li');
@@ -171,12 +178,6 @@ function updateInventoryDisplay() {
         const itemDetails = getItemByName(name);
         const itemPrice = itemDetails ? itemDetails.price : 0;
         
-        // Calculate total value for this item
-        const totalItemValue = itemPrice * data.count;
-        
-        // Add to total inventory value
-        totalValue += totalItemValue;
-        
         // Create item details container
         const itemDetailsDiv = document.createElement('div');
         itemDetailsDiv.classList.add('item-details');
@@ -189,7 +190,7 @@ function updateInventoryDisplay() {
         // Create item price element
         const itemPriceElement = document.createElement('span');
         itemPriceElement.classList.add('item-price');
-        itemPriceElement.textContent = `${formatPrice(itemPrice)} ${data.count > 1 ? `(Total: ${formatPrice(totalItemValue)})` : ''}`;
+        itemPriceElement.textContent = `${formatPrice(itemPrice)} ${data.count > 1 ? `(Total: ${formatPrice(itemPrice * data.count)})` : ''}`;
         
         // Append elements
         itemDetailsDiv.appendChild(itemName);
