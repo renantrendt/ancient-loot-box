@@ -129,6 +129,17 @@ function addToInventory(itemName, rarity) {
     updateInventoryDisplay();
 }
 
+// Function to calculate total inventory value
+function calculateTotalInventoryValue() {
+    let totalValue = 0;
+    Object.entries(inventory).forEach(([name, data]) => {
+        const itemDetails = getItemByName(name);
+        const itemPrice = itemDetails ? itemDetails.price : 0;
+        totalValue += itemPrice * data.count;
+    });
+    return totalValue;
+}
+
 // Function to update the inventory display
 function updateInventoryDisplay() {
     inventoryList.innerHTML = '';
@@ -146,7 +157,7 @@ function updateInventoryDisplay() {
     });
     
     // Calculate total inventory value
-    let totalValue = 0;
+    let totalValue = calculateTotalInventoryValue();
     
     sortedItems.forEach(([name, data]) => {
         const li = document.createElement('li');
@@ -591,11 +602,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Confirm bet
     confirmBetBtn.addEventListener('click', () => {
-        const betAmount = document.getElementById('bet-amount').value;
+        const betAmount = parseInt(document.getElementById('bet-amount').value);
         const betItem = document.getElementById('bet-item').value.toLowerCase();
         
         if (!betAmount || !betItem) {
             alert('Please fill in all fields');
+            return;
+        }
+
+        // Check if player has enough value in their inventory
+        const totalInventoryValue = calculateTotalInventoryValue();
+        if (betAmount > totalInventoryValue) {
+            alert('Sorry ur too poor, try loot boxing more.');
             return;
         }
         
