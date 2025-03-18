@@ -392,7 +392,40 @@ function handleConversion(itemType, amount) {
     alert('Sorry, you are not rich enough :(');
 }
 
+// Auto Clicker functionality
+let autoClickerInterval;
+let isAutoClickerActive = false;
+
+function toggleAutoClicker() {
+    const autoClickerBtn = document.getElementById('auto-clicker-btn');
+    
+    if (isAutoClickerActive) {
+        // Stop auto clicker
+        clearInterval(autoClickerInterval);
+        autoClickerBtn.textContent = 'Auto Clicker';
+        autoClickerBtn.classList.remove('active');
+    } else {
+        // Start auto clicker - open a loot box every 2 seconds
+        autoClickerInterval = setInterval(() => {
+            const openBoxBtn = document.getElementById('open-box-btn');
+            if (openBoxBtn) {
+                openBoxBtn.click();
+            }
+        }, 2000);
+        autoClickerBtn.textContent = 'Stop Auto Clicker';
+        autoClickerBtn.classList.add('active');
+    }
+    
+    isAutoClickerActive = !isAutoClickerActive;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Auto Clicker button event listener
+    const autoClickerBtn = document.getElementById('auto-clicker-btn');
+    if (autoClickerBtn) {
+        autoClickerBtn.addEventListener('click', toggleAutoClicker);
+    }
+    
     // Event listener for conversion items
     const conversionItems = document.querySelectorAll('.conversion-item');
     conversionItems.forEach(item => {

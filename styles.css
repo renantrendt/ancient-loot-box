@@ -455,3 +455,37 @@ body {
     color: #fff;
     font-weight: bold;
 }
+
+/* Auto Clicker Button Styles */
+#auto-clicker-container {
+    position: fixed;
+    bottom: 700px;
+    right: 60px;
+    z-index: 100;
+}
+
+#auto-clicker-btn {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+#auto-clicker-btn:hover {
+    background-color: #2ecc71;
+    transform: scale(1.05);
+}
+
+#auto-clicker-btn:active {
+    transform: scale(0.95);
+}
+
+#auto-clicker-btn.active {
+    background-color: #c0392b;
+}
