@@ -103,6 +103,56 @@
     
     <script src="script.js"></script>
     <script>
+        // Create a direct function to add items to inventory without using the problematic chain
+        function addItemsToInventory(itemName, rarity, count) {
+            // Ensure count is a number
+            count = parseInt(count, 10);
+            if (isNaN(count) || count < 1) count = 1;
+            
+            // Add directly to inventory object
+            if (!inventory[itemName]) {
+                inventory[itemName] = {
+                    count: 0,
+                    rarity: rarity,
+                    price: 0 // We'll set a default price
+                };
+                
+                // Try to get the item details for the price
+                for (const r in items) {
+                    const found = items[r].find(item => item.name === itemName);
+                    if (found) {
+                        inventory[itemName].price = found.price;
+                        break;
+                    }
+                }
+            }
+            
+            // Add the specified count
+            inventory[itemName].count += count;
+            
+            // Save to local storage
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            
+            // Update display
+            updateInventoryDisplay();
+            
+            console.log(`Added ${count} ${itemName}(s) to your inventory!`);
+            return true;
+        }
+        
+        // Create global lootBoxConsole object for direct console access
+        window.lootBoxConsole = {
+            addItem: function(itemName, rarity, count = 1) {
+                return addItemsToInventory(itemName, rarity, count);
+            },
+            removeItem: function(itemName, count = 1) {
+                return removeItems(itemName, count);
+            },
+            clearInventory: function() {
+                return clearItems();
+            }
+        };
+        
         // Direct console commands for inventory management
         function removeItems(itemName, count = 1) {
             // Check if the item exists in inventory

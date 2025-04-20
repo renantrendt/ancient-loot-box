@@ -459,8 +459,8 @@ body {
 /* Auto Clicker Button Styles */
 #auto-clicker-container {
     position: fixed;
-    bottom: 700px;
-    right: 60px;
+    bottom: 20px;
+    right: 20px;
     z-index: 100;
 }
 

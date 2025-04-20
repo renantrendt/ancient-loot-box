@@ -82,17 +82,36 @@ function getRandomItem(itemArray) {
     return itemArray[randomIndex];
 }
 
-// Function to format price with K, M, and B for thousands, millions, and billions
+// Function to format price with K, M, B, T, Q, etc. for larger denominations
 function formatPrice(price) {
-    if (price >= 1000000000) {
-        return (price / 1000000000).toFixed(1) + 'B$';
-    } else if (price >= 1000000) {
-        return (price / 1000000).toFixed(1) + 'M$';
-    } else if (price >= 1000) {
-        return (price / 1000).toFixed(1) + 'K$';
-    } else {
+    // Define the suffixes for different scales
+    const suffixes = ['', 'K', 'M', 'B', 'T', 'Q', 'Qi', 'S', 'Se', 'O', 'N', 'D'];
+    
+    // If price is less than 1000, just return it with $ sign
+    if (price < 1000) {
         return price + '$';
     }
+    
+    // Calculate the suffix index based on the number of thousands
+    // Math.floor(Math.log10(price) / 3) gives us how many powers of 1000 are in the number
+    const suffixIndex = Math.min(Math.floor(Math.log10(Math.abs(price)) / 3), suffixes.length - 1);
+    
+    // Calculate the scaled value (divided by the appropriate power of 1000)
+    const scaledValue = price / Math.pow(1000, suffixIndex);
+    
+    // Format the number with appropriate precision
+    // For very large numbers, we want to avoid showing things like 2777.8B$
+    // and instead show 2.8T$
+    if (scaledValue >= 1000) {
+        // If the scaled value is >= 1000, we should use the next suffix up
+        // For example, 2777.8B$ should be 2.8T$
+        const nextSuffixIndex = Math.min(suffixIndex + 1, suffixes.length - 1);
+        const nextScaledValue = price / Math.pow(1000, nextSuffixIndex);
+        return nextScaledValue.toFixed(1) + suffixes[nextSuffixIndex] + '$';
+    }
+    
+    // Return the formatted string with 1 decimal place and the appropriate suffix
+    return scaledValue.toFixed(1) + suffixes[suffixIndex] + '$';
 }
 
 // Function to get a random item based on rarity chances
@@ -113,7 +132,12 @@ function getRandomLoot(isBetting = false) {
 }
 
 // Function to add item to inventory
-function addToInventory(itemName, rarity) {
+function addToInventory(itemName, rarity, count = 1) {
+    console.log(`addToInventory called with count: ${count}`);
+    // Ensure count is a number
+    count = parseInt(count, 10);
+    if (isNaN(count) || count < 1) count = 1;
+    
     if (!inventory[itemName]) {
         const itemDetails = getItemByName(itemName);
         inventory[itemName] = { 
@@ -122,7 +146,10 @@ function addToInventory(itemName, rarity) {
             price: itemDetails ? itemDetails.price : 0
         };
     }
-    inventory[itemName].count++;
+    
+    // Add the items
+    inventory[itemName].count += count;
+    console.log(`Inventory count for ${itemName} is now: ${inventory[itemName].count}`);
     
     // Save to local storage
     localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
@@ -174,7 +201,39 @@ function updateInventoryDisplay() {
         
         const itemIcon = document.createElement('div');
         itemIcon.classList.add('item-icon');
-        itemIcon.style.backgroundImage = `url('images/${items[data.rarity].find(item => item.name === name)?.image || 'default.png'}')`;
+        
+        // Fix for undefined rarity - safely access the items array
+        let imageUrl = 'default.png';
+        try {
+            // First try to get the item from its declared rarity
+            if (items[data.rarity] && Array.isArray(items[data.rarity])) {
+                const foundItem = items[data.rarity].find(item => item.name === name);
+                if (foundItem && foundItem.image) {
+                    imageUrl = foundItem.image;
+                }
+            } else {
+                // If that fails, search through all rarities
+                for (const rarity in items) {
+                    if (Array.isArray(items[rarity])) {
+                        const foundItem = items[rarity].find(item => item.name === name);
+                        if (foundItem && foundItem.image) {
+                            imageUrl = foundItem.image;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error finding item image:', error);
+            // Fall back to default image
+        }
+        
+        // Check if the image path needs 'images/' prefix
+        if (!imageUrl.startsWith('images/') && !imageUrl.includes('/')) {
+            imageUrl = 'images/' + imageUrl;
+        }
+        
+        itemIcon.style.backgroundImage = `url('${imageUrl}')`;
         
         // Get item price
         const itemDetails = getItemByName(name);
@@ -214,10 +273,14 @@ function updateInventoryDisplay() {
 
 // Simple function to directly add items for testing
 function addItemDirectly(itemName, rarity, count) {
-    for (let i = 0; i < count; i++) {
-        addToInventory(itemName, rarity);
-    }
-    alert(`Added ${count} ${itemName}(s) to your inventory!`);
+    console.log(`addItemDirectly called with count: ${count}`);
+    // Ensure count is a number
+    count = parseInt(count, 10);
+    if (isNaN(count) || count < 1) count = 1;
+    
+    // Add items directly with the count parameter
+    addToInventory(itemName, rarity, count);
+    console.log(`Added ${count} ${itemName}(s) to your inventory!`);
 }
 
 // Function to remove items from inventory
@@ -275,6 +338,10 @@ window.removeItems = function(itemName, count = 1) {
 };
 
 window.addItems = function(itemName, rarity, count = 1) {
+    console.log(`addItems called with count: ${count}`);
+    // Convert count to a number to ensure it's not being treated as a string
+    count = parseInt(count, 10);
+    if (isNaN(count) || count < 1) count = 1;
     addItemDirectly(itemName, rarity, count);
     return true;
 };
