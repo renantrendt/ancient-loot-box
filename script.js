@@ -16,7 +16,7 @@ const items = {
     legendary: [
         { name: "Shot Gun", image: "Winchester-SXP-Field-Compact-20-Gauge-26-Barrel-Shotgun-048702004711_image1__23692-removebg-preview.png", price: 3000 },
         { name: "Machine Gun", image: "PEO_M249_Para_ACOG-removebg-preview.png", price: 7000 },
-        { name: "Scythe", image: "png-clipart-darksiders-ii-death-scythe-weapon-reaper-weapon-game-weapon-thumbnail-removebg-preview.png", price: 30000 },
+        { name: "Scythe", image: "scythe-removebg-preview.png", price: 30000 },
         { name: "Bazooka", image: "s-l400-removebg-preview.png", price: 13000 },
         { name: "Sniper Rifle", image: "sniper.webp", price: 30000 },
         { name: "Heineken Pack", image: "10-104218_heineken-beer-bottles-6-pack-330ml-removebg-preview.png", price: 50 }
