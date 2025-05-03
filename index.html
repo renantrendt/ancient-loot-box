@@ -5,8 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ancient Loot Box</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Import the Supabase client library -->
+    <script type="module" src="js/supabase.js"></script>
 </head>
 <body>
+    <!-- Login Status Bar -->
+    <div class="auth-container">
+        <div id="login-status">
+            <button id="login-button" class="auth-button">Sign in with Google</button>
+            <button id="logout-button" class="auth-button" style="display: none;">Sign Out</button>
+            <span id="user-info" style="display: none;">Signed in as: <span id="user-email"></span></span>
+        </div>
+    </div>
     <div class="container">
         <div class="inventory-panel">
             <h2>Collected Items</h2>
@@ -101,6 +111,131 @@
         <button id="auto-clicker-btn">Auto Clicker</button>
     </div>
     
+    <script type="module">
+        // Import Supabase functions
+        import { supabase, getCurrentUser, signInWithGoogle, signOut, saveInventoryToSupabase, loadInventoryFromSupabase } from './js/supabase.js';
+        
+        // Authentication state tracking
+        let currentUser = null;
+        
+        // Check auth state on page load
+        async function checkAuthState() {
+            try {
+                const user = await getCurrentUser();
+                if (user) {
+                    // User is signed in
+                    document.getElementById('login-button').style.display = 'none';
+                    document.getElementById('logout-button').style.display = 'inline-block';
+                    document.getElementById('user-info').style.display = 'inline-block';
+                    document.getElementById('user-email').textContent = user.email;
+                    currentUser = user;
+                    
+                    // Load inventory from Supabase
+                    const supabaseInventory = await loadInventoryFromSupabase(user.id);
+                    if (supabaseInventory) {
+                        // Merge with local inventory if needed, or just replace
+                        inventory = supabaseInventory;
+                        localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+                        updateInventoryDisplay();
+                    }
+                } else {
+                    // User is signed out
+                    document.getElementById('login-button').style.display = 'inline-block';
+                    document.getElementById('logout-button').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking auth state:', error);
+            }
+        }
+        
+        // Set up auth event listeners
+        document.getElementById('login-button').addEventListener('click', async () => {
+            const { success } = await signInWithGoogle();
+            if (success) {
+                console.log('Google sign-in initiated');
+            }
+        });
+        
+        document.getElementById('logout-button').addEventListener('click', async () => {
+            const success = await signOut();
+            if (success) {
+                console.log('Signed out successfully');
+                currentUser = null;
+                document.getElementById('login-button').style.display = 'inline-block';
+                document.getElementById('logout-button').style.display = 'none';
+                document.getElementById('user-info').style.display = 'none';
+            }
+        });
+        
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN') {
+                console.log('User signed in:', session?.user);
+                await checkAuthState();
+            } else if (event === 'SIGNED_OUT') {
+                console.log('User signed out');
+                currentUser = null;
+                // Update UI when user signs out
+                document.getElementById('login-button').style.display = 'inline-block';
+                document.getElementById('logout-button').style.display = 'none';
+                document.getElementById('user-info').style.display = 'none';
+            }
+        });
+        
+        // Override the addToInventory function to save to Supabase
+        const originalAddToInventory = window.addToInventory || null;
+        window.addToInventory = async function(itemName, rarity, count = 1) {
+            // Call the original function first
+            if (originalAddToInventory) {
+                originalAddToInventory(itemName, rarity, count);
+            } else {
+                // If original doesn't exist, implement basic functionality
+                if (!inventory[itemName]) {
+                    inventory[itemName] = {
+                        count: 0,
+                        rarity: rarity,
+                        price: 0
+                    };
+                    
+                    // Try to get the item details for the price
+                    for (const r in items) {
+                        const found = items[r].find(item => item.name === itemName);
+                        if (found) {
+                            inventory[itemName].price = found.price;
+                            break;
+                        }
+                    }
+                }
+                
+                inventory[itemName].count += count;
+                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+                updateInventoryDisplay();
+            }
+            
+            // Save to Supabase if user is logged in
+            if (currentUser) {
+                await saveInventoryToSupabase(currentUser.id, inventory);
+            }
+        };
+        
+        // Override removeItem to sync with Supabase
+        const originalRemoveItem = window.removeItem || null;
+        window.removeItem = async function(itemName, count = 1) {
+            // Call original function
+            const result = originalRemoveItem ? originalRemoveItem(itemName, count) : removeItems(itemName, count);
+            
+            // If successful and user is logged in, save to Supabase
+            if (result && currentUser) {
+                await saveInventoryToSupabase(currentUser.id, inventory);
+            }
+            
+            return result;
+        };
+        
+        // Check auth state on page load
+        checkAuthState();
+    </script>
     <script src="script.js"></script>
     <script>
         // Create a direct function to add items to inventory without using the problematic chain
@@ -193,11 +328,18 @@
             return true;
         }
         
-        function clearItems() {
+        async function clearItems() {
             inventory = {};
             localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             updateInventoryDisplay();
             console.log('Inventory cleared');
+            
+            // If user is logged in, update Supabase as well
+            const user = await getCurrentUser();
+            if (user) {
+                await saveInventoryToSupabase(user.id, inventory);
+            }
+            
             return true;
         }
     </script>

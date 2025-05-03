@@ -354,8 +354,25 @@ window.clearItems = function() {
     return true;
 };
 
+// Debounce mechanism to prevent duplicate calls
+let isConversionInProgress = false;
+
 // Function to handle conversions - simplified approach
 function handleConversion(itemType, amount) {
+    // Prevent duplicate calls
+    if (isConversionInProgress) {
+        console.log('Conversion already in progress, ignoring duplicate call');
+        return;
+    }
+    
+    // Set flag to prevent duplicate calls
+    isConversionInProgress = true;
+    
+    // Reset the flag after a short delay
+    setTimeout(() => {
+        isConversionInProgress = false;
+    }, 500);
+    
     // Simple direct conversions
     if (itemType === 'helmet') {
         // Check if we have enough helmets
@@ -493,15 +510,8 @@ document.addEventListener('DOMContentLoaded', () => {
         autoClickerBtn.addEventListener('click', toggleAutoClicker);
     }
     
-    // Event listener for conversion items
-    const conversionItems = document.querySelectorAll('.conversion-item');
-    conversionItems.forEach(item => {
-        item.addEventListener('click', () => {
-            const itemName = item.getAttribute('data-item');
-            const itemAmount = parseInt(item.getAttribute('data-amount'));
-            handleConversion(itemName, itemAmount);
-        });
-    });
+    // NOTE: Conversion items use inline onclick attributes in HTML
+    // No need for additional event listeners here which would cause double triggering
 
     // Event listener for opening the loot box
     openBoxBtn.addEventListener('click', () => {
