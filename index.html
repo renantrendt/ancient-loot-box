@@ -106,242 +106,292 @@
         </div>
     </div>
     
+    <!-- High Stakes Spinning Line -->
+    <div id="spinning-line-container" class="spinning-line-container hidden">
+        <div class="spinning-line">
+            <div class="items-track" id="items-track">
+                <!-- Items will be dynamically generated here -->
+            </div>
+            <div class="selection-indicator"></div>
+        </div>
+        <div class="keep-delete-buttons hidden" id="keep-delete-buttons">
+            <button id="keep-btn">Keep</button>
+            <button id="delete-btn">Delete</button>
+        </div>
+    </div>
+    
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="popup-overlay" style="display: none;">
+        <div class="popup-content shop-content">
+            <h2>🛒 High Stakes Shop</h2>
+            <div id="shop-items-list">
+                <!-- Shop items will be dynamically generated here -->
+            </div>
+            <div class="popup-buttons">
+                <button id="close-shop-btn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Auto Keep Settings Modal -->
+    <div id="auto-keep-settings-modal" class="popup-overlay" style="display: none;">
+        <div class="popup-content auto-keep-content">
+            <h2>⚙️ Auto Keep Settings</h2>
+            <p>Toggle which items to automatically keep:</p>
+            <div id="auto-keep-items-list">
+                <!-- Auto keep toggles will be dynamically generated here -->
+            </div>
+            <div class="popup-buttons">
+                <button id="close-auto-keep-settings-btn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Purchase Confirmation Modal -->
+    <div id="purchase-confirm-modal" class="popup-overlay" style="display: none;">
+        <div class="popup-content confirm-content">
+            <h2 id="confirm-title">Confirm Purchase</h2>
+            <p id="confirm-message"></p>
+            <div class="popup-buttons">
+                <button id="confirm-yes-btn">Yes</button>
+                <button id="confirm-no-btn">No</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Auto Clicker Button -->
     <div id="auto-clicker-container">
         <button id="auto-clicker-btn">Auto Clicker</button>
     </div>
     
+    <!-- High Stakes Button -->
+    <div id="high-stakes-container">
+        <button id="high-stakes-btn">High Stakes</button>
+    </div>
+    
+    <!-- Shop Button (High Stakes only) -->
+    <div id="shop-container" class="hidden">
+        <button id="shop-btn">🛒 Shop</button>
+    </div>
+    
     <script type="module">
         // Import Supabase functions
-        import { supabase, getCurrentUser, signInWithGoogle, signOut, saveInventoryToSupabase, loadInventoryFromSupabase } from './js/supabase.js';
+        import { supabase, getCurrentUser, signInWithGoogle, signOut, saveInventoryToSupabase, loadInventoryFromSupabase, saveHighStakesInventoryToSupabase, loadHighStakesInventoryFromSupabase, saveHighStakesModeStateToSupabase, loadHighStakesModeStateFromSupabase, saveShopPurchaseToSupabase, loadShopPurchasesFromSupabase, checkShopPurchaseFromSupabase, checkShopTableExists } from './js/supabase.js';
         
         // Authentication state tracking
         let currentUser = null;
+        
+        // Make currentUser globally accessible
+        window.currentUser = null;
+        
+        // Make Supabase functions and client globally accessible
+        window.supabase = supabase;
+        window.saveInventoryToSupabase = saveInventoryToSupabase;
+        window.saveHighStakesInventoryToSupabase = saveHighStakesInventoryToSupabase;
+        window.loadHighStakesInventoryFromSupabase = loadHighStakesInventoryFromSupabase;
+        window.saveHighStakesModeStateToSupabase = saveHighStakesModeStateToSupabase;
+        window.loadHighStakesModeStateFromSupabase = loadHighStakesModeStateFromSupabase;
+        window.saveShopPurchaseToSupabase = saveShopPurchaseToSupabase;
+        window.loadShopPurchasesFromSupabase = loadShopPurchasesFromSupabase;
+        window.checkShopPurchaseFromSupabase = checkShopPurchaseFromSupabase;
+        window.checkShopTableExists = checkShopTableExists;
+        
+        // Debug function to clear inventories table
+        window.clearSupabaseInventories = async () => {
+            if (!window.currentUser) {
+                console.log('No user logged in');
+                return;
+            }
+            
+            try {
+                console.log('Clearing inventories for user:', window.currentUser.id);
+                const { error } = await supabase
+                    .from('inventories')
+                    .delete()
+                    .eq('user_id', window.currentUser.id);
+                
+                if (error) {
+                    console.error('Error clearing inventories:', error);
+                } else {
+                    console.log('Inventories cleared successfully');
+                }
+            } catch (error) {
+                console.error('Failed to clear inventories:', error);
+            }
+        };
+
+        // Test function for debugging
+        window.testSupabaseConnection = async () => {
+            console.log('Testing Supabase connection...');
+            
+            // Test items table
+            try {
+                const { data, error } = await supabase.from('items').select('*').limit(3);
+                if (error) {
+                    console.error('Error fetching items:', error);
+                } else {
+                    console.log('Items table test successful:', data);
+                }
+            } catch (error) {
+                console.error('Items table test failed:', error);
+            }
+            
+            // Test with current user if logged in
+            if (window.currentUser) {
+                console.log('Testing with current user ID:', window.currentUser.id);
+                try {
+                    const testInventory = {
+                        'Test Item': { count: 1, rarity: 'common' }
+                    };
+                    const result = await window.saveInventoryToSupabase(window.currentUser.id, testInventory);
+                    console.log('Save test result:', result);
+                } catch (error) {
+                    console.error('Save test failed:', error);
+                }
+            } else {
+                console.log('No user logged in, skipping user-specific tests');
+            }
+        };
         
         // Check auth state on page load
         async function checkAuthState() {
             try {
                 const user = await getCurrentUser();
+                console.log('checkAuthState - user:', user);
                 if (user) {
                     // User is signed in
+                    console.log('User is signed in:', user.email, 'ID:', user.id);
                     document.getElementById('login-button').style.display = 'none';
                     document.getElementById('logout-button').style.display = 'inline-block';
                     document.getElementById('user-info').style.display = 'inline-block';
                     document.getElementById('user-email').textContent = user.email;
                     currentUser = user;
+                    window.currentUser = user;
                     
                     // Load inventory from Supabase
+                    console.log('Loading inventory from Supabase for user:', user.id);
                     const supabaseInventory = await loadInventoryFromSupabase(user.id);
                     if (supabaseInventory) {
+                        console.log('Loaded inventory from Supabase:', supabaseInventory);
                         // Merge with local inventory if needed, or just replace
                         inventory = supabaseInventory;
                         localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
                         updateInventoryDisplay();
+                    } else {
+                        console.log('No inventory found in Supabase');
+                    }
+                    
+                    // Check if user was in High Stakes mode (for browser refresh persistence)
+                    const highStakesModeState = await loadHighStakesModeStateFromSupabase(user.id);
+                    if (highStakesModeState && highStakesModeState.isHighStakesMode) {
+                        // Restore High Stakes mode state
+                        window.normalInventoryBackup = highStakesModeState.normalInventoryBackup;
+                        await window.enterHighStakesMode();
                     }
                 } else {
                     // User is signed out
+                    console.log('User is signed out');
                     document.getElementById('login-button').style.display = 'inline-block';
                     document.getElementById('logout-button').style.display = 'none';
                     document.getElementById('user-info').style.display = 'none';
+                    currentUser = null;
+                    window.currentUser = null;
                 }
             } catch (error) {
                 console.error('Error checking auth state:', error);
             }
         }
         
-        // Set up auth event listeners
-        document.getElementById('login-button').addEventListener('click', async () => {
-            const { success } = await signInWithGoogle();
-            if (success) {
-                console.log('Google sign-in initiated');
-            }
-        });
-        
-        document.getElementById('logout-button').addEventListener('click', async () => {
-            const success = await signOut();
-            if (success) {
-                console.log('Signed out successfully');
-                currentUser = null;
-                document.getElementById('login-button').style.display = 'inline-block';
-                document.getElementById('logout-button').style.display = 'none';
-                document.getElementById('user-info').style.display = 'none';
-            }
-        });
-        
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN') {
-                console.log('User signed in:', session?.user);
-                await checkAuthState();
-            } else if (event === 'SIGNED_OUT') {
-                console.log('User signed out');
-                currentUser = null;
-                // Update UI when user signs out
-                document.getElementById('login-button').style.display = 'inline-block';
-                document.getElementById('logout-button').style.display = 'none';
-                document.getElementById('user-info').style.display = 'none';
-            }
-        });
-        
-        // Override the addToInventory function to save to Supabase
-        const originalAddToInventory = window.addToInventory || null;
-        window.addToInventory = async function(itemName, rarity, count = 1) {
-            // Call the original function first
-            if (originalAddToInventory) {
-                originalAddToInventory(itemName, rarity, count);
-            } else {
-                // If original doesn't exist, implement basic functionality
-                if (!inventory[itemName]) {
-                    inventory[itemName] = {
-                        count: 0,
-                        rarity: rarity,
-                        price: 0
-                    };
-                    
-                    // Try to get the item details for the price
-                    for (const r in items) {
-                        const found = items[r].find(item => item.name === itemName);
-                        if (found) {
-                            inventory[itemName].price = found.price;
-                            break;
+        // Set up auth event listeners with error handling
+        function setupAuthListeners() {
+            const loginBtn = document.getElementById('login-button');
+            const logoutBtn = document.getElementById('logout-button');
+            
+            if (loginBtn) {
+                // Remove any existing listeners
+                loginBtn.replaceWith(loginBtn.cloneNode(true));
+                const newLoginBtn = document.getElementById('login-button');
+                
+                newLoginBtn.addEventListener('click', async () => {
+                    try {
+                        console.log('Login button clicked');
+                        const { success } = await signInWithGoogle();
+                        if (success) {
+                            console.log('Google sign-in initiated');
                         }
+                    } catch (error) {
+                        console.error('Error during login:', error);
                     }
+                });
+            }
+            
+            if (logoutBtn) {
+                // Remove any existing listeners
+                logoutBtn.replaceWith(logoutBtn.cloneNode(true));
+                const newLogoutBtn = document.getElementById('logout-button');
+                
+                newLogoutBtn.addEventListener('click', async () => {
+                    try {
+                        console.log('Logout button clicked');
+                        const success = await signOut();
+                        if (success) {
+                            console.log('Signed out successfully');
+                            currentUser = null;
+                            window.currentUser = null;
+                            document.getElementById('login-button').style.display = 'inline-block';
+                            document.getElementById('logout-button').style.display = 'none';
+                            document.getElementById('user-info').style.display = 'none';
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error);
+                    }
+                });
+            }
+        }
+        
+        // Listen for auth state changes with better error handling
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state changed:', event, session);
+            try {
+                if (event === 'SIGNED_IN') {
+                    console.log('User signed in:', session?.user);
+                    currentUser = session?.user;
+                    window.currentUser = session?.user;
+                    await checkAuthState();
+                } else if (event === 'SIGNED_OUT') {
+                    console.log('User signed out');
+                    currentUser = null;
+                    window.currentUser = null;
+                    // Update UI when user signs out
+                    document.getElementById('login-button').style.display = 'inline-block';
+                    document.getElementById('logout-button').style.display = 'none';
+                    document.getElementById('user-info').style.display = 'none';
                 }
                 
-                inventory[itemName].count += count;
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-                updateInventoryDisplay();
+                // Refresh auth button listeners after any auth state change
+                setupAuthListeners();
+            } catch (error) {
+                console.error('Error handling auth state change:', error);
             }
-            
-            // Save to Supabase if user is logged in
-            if (currentUser) {
-                await saveInventoryToSupabase(currentUser.id, inventory);
-            }
-        };
+        });
         
-        // Override removeItem to sync with Supabase
-        const originalRemoveItem = window.removeItem || null;
-        window.removeItem = async function(itemName, count = 1) {
-            // Call original function
-            const result = originalRemoveItem ? originalRemoveItem(itemName, count) : removeItems(itemName, count);
-            
-            // If successful and user is logged in, save to Supabase
-            if (result && currentUser) {
-                await saveInventoryToSupabase(currentUser.id, inventory);
+        // Initialize everything on page load
+        async function initializePage() {
+            try {
+                setupAuthListeners();
+                await checkAuthState();
+            } catch (error) {
+                console.error('Error initializing page:', error);
             }
-            
-            return result;
-        };
+        }
         
         // Check auth state on page load
-        checkAuthState();
+        initializePage();
     </script>
     <script src="script.js"></script>
     <script>
-        // Create a direct function to add items to inventory without using the problematic chain
-        function addItemsToInventory(itemName, rarity, count) {
-            // Ensure count is a number
-            count = parseInt(count, 10);
-            if (isNaN(count) || count < 1) count = 1;
-            
-            // Add directly to inventory object
-            if (!inventory[itemName]) {
-                inventory[itemName] = {
-                    count: 0,
-                    rarity: rarity,
-                    price: 0 // We'll set a default price
-                };
-                
-                // Try to get the item details for the price
-                for (const r in items) {
-                    const found = items[r].find(item => item.name === itemName);
-                    if (found) {
-                        inventory[itemName].price = found.price;
-                        break;
-                    }
-                }
-            }
-            
-            // Add the specified count
-            inventory[itemName].count += count;
-            
-            // Save to local storage
-            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-            
-            // Update display
-            updateInventoryDisplay();
-            
-            console.log(`Added ${count} ${itemName}(s) to your inventory!`);
-            return true;
-        }
-        
-        // Create global lootBoxConsole object for direct console access
-        window.lootBoxConsole = {
-            addItem: function(itemName, rarity, count = 1) {
-                return addItemsToInventory(itemName, rarity, count);
-            },
-            removeItem: function(itemName, count = 1) {
-                return removeItems(itemName, count);
-            },
-            clearInventory: function() {
-                return clearItems();
-            }
-        };
-        
-        // Direct console commands for inventory management
-        function removeItems(itemName, count = 1) {
-            // Check if the item exists in inventory
-            if (!inventory[itemName]) {
-                console.log(`Error: ${itemName} not found in inventory`);
-                return false;
-            }
-            
-            // Check if we have enough of the item
-            if (inventory[itemName].count < count) {
-                console.log(`Error: Not enough ${itemName} in inventory. You have ${inventory[itemName].count} but tried to remove ${count}`);
-                return false;
-            }
-            
-            // Remove the items
-            inventory[itemName].count -= count;
-            
-            // If count reaches 0, remove the item entirely
-            if (inventory[itemName].count <= 0) {
-                delete inventory[itemName];
-            }
-            
-            // Save to local storage
-            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-            
-            // Update the inventory display
-            updateInventoryDisplay();
-            
-            console.log(`Successfully removed ${count} ${itemName}(s) from your inventory`);
-            return true;
-        }
-        
-        function addItems(itemName, rarity, count = 1) {
-            for (let i = 0; i < count; i++) {
-                addToInventory(itemName, rarity);
-            }
-            console.log(`Added ${count} ${itemName}(s) to your inventory!`);
-            return true;
-        }
-        
-        async function clearItems() {
-            inventory = {};
-            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-            updateInventoryDisplay();
-            console.log('Inventory cleared');
-            
-            // If user is logged in, update Supabase as well
-            const user = await getCurrentUser();
-            if (user) {
-                await saveInventoryToSupabase(user.id, inventory);
-            }
-            
-            return true;
-        }
+        // Simple debug functions available immediately - REMOVED (now handled in script.js)
+        // The fixed console commands are available in script.js as window.lootBoxConsole
     </script>
 </body>
 </html>
