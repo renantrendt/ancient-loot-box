@@ -105,13 +105,13 @@ let spinningAnimation = null;
 const shopItems = {
     autoClick: {
         name: "Auto Click",
-        price: 10000,
+        price: 1300,
         description: "Automatically opens loot boxes every 8 seconds (after each roll completes)",
         purchased: false
     },
     autoKeep: {
         name: "Auto Keep",
-        price: 12000,
+        price: 1600,
         description: "Automatically keeps/deletes items based on your preferences",
         purchased: false
     }
