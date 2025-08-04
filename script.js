@@ -114,6 +114,20 @@ const shopItems = {
         price: 1600,
         description: "Automatically keeps/deletes items based on your preferences",
         purchased: false
+    },
+    luckPotion: {
+        name: "Luck Potion",
+        price: 2000,
+        description: "Makes you only get Epic or above items for 20 minutes (stackable)",
+        purchased: false,
+        consumable: true
+    },
+    speedPotion: {
+        name: "Speed Potion",
+        price: 2000,
+        description: "Makes rolling 70% faster for 20 minutes (stackable)",
+        purchased: false,
+        consumable: true
     }
 };
 
@@ -133,6 +147,73 @@ let isHighStakesAutoClickerActive = false;
 
 // Flag to disable Supabase shop functions if table doesn't exist
 window.supabaseShopDisabled = false;
+
+// Potion System
+let activePotions = {
+    luck: {
+        active: false,
+        endTime: null,
+        timeRemaining: 0
+    },
+    speed: {
+        active: false,
+        endTime: null,
+        timeRemaining: 0
+    }
+};
+
+// Potion timer intervals
+let potionTimerInterval = null;
+let tabVisible = true;
+
+// Spinning state tracking for background tab support
+let currentSpinState = {
+    isSpinning: false,
+    startTime: null,
+    duration: null,
+    timeoutId: null
+};
+
+// Tab visibility handling for both potions and spinning
+document.addEventListener('visibilitychange', () => {
+    const wasVisible = tabVisible;
+    tabVisible = !document.hidden;
+    
+    if (tabVisible && !wasVisible) {
+        console.log('🔄 Tab became visible - resuming all timers');
+        
+        // Resume potion timers when tab becomes visible
+        updatePotionTimers();
+        if ((activePotions.luck.active || activePotions.speed.active) && !potionTimerInterval) {
+            startPotionTimer();
+        }
+        
+        // Handle spinning resumption
+        if (currentSpinState.isSpinning && currentSpinState.startTime && currentSpinState.duration) {
+            const elapsed = Date.now() - currentSpinState.startTime;
+            const remaining = currentSpinState.duration - elapsed;
+            
+            console.log(`🎰 Resuming spin - elapsed: ${elapsed}ms, remaining: ${remaining}ms`);
+            
+            if (remaining > 0) {
+                // Clear any existing timeout
+                if (currentSpinState.timeoutId) {
+                    clearTimeout(currentSpinState.timeoutId);
+                }
+                
+                // Resume with remaining time
+                currentSpinState.timeoutId = setTimeout(() => {
+                    console.log('🎰 Completing spin after tab resume');
+                    selectWinningItem();
+                }, remaining);
+            } else {
+                // Time already expired while tab was hidden
+                console.log('🎰 Spin should have completed while backgrounded - completing now');
+                selectWinningItem();
+            }
+        }
+    }
+});
 
 // DOM elements
 const lootBox = document.getElementById('loot-box');
@@ -154,6 +235,173 @@ function doesItemDrop(rarity, isBetting = false) {
 function getRandomItem(itemArray) {
     const randomIndex = Math.floor(Math.random() * itemArray.length);
     return itemArray[randomIndex];
+}
+
+// Potion System Functions
+function activatePotion(potionType) {
+    console.log(`🧪 Activating ${potionType} potion`);
+    
+    const potionDuration = 20 * 60 * 1000; // 20 minutes in milliseconds
+    const now = Date.now();
+    
+    if (activePotions[potionType].active) {
+        // Extend existing potion
+        activePotions[potionType].endTime += potionDuration;
+        console.log(`🧪 Extended ${potionType} potion timer`);
+    } else {
+        // Activate new potion
+        activePotions[potionType].active = true;
+        activePotions[potionType].endTime = now + potionDuration;
+        console.log(`🧪 Started new ${potionType} potion timer`);
+    }
+    
+    // Save potion state
+    savePotionState();
+    
+    // Start timer if not already running
+    if (!potionTimerInterval) {
+        startPotionTimer();
+    }
+    
+    // Update UI
+    updatePotionDisplay();
+    
+    // Show activation message
+    const potionName = potionType === 'luck' ? 'Luck Potion' : 'Speed Potion';
+    alert(`✨ ${potionName} activated! ${formatPotionTime(activePotions[potionType].endTime - now)} remaining.`);
+}
+
+function updatePotionTimers() {
+    // Remove tab visibility check - potions should continue in background using timestamps
+    const now = Date.now();
+    let anyActive = false;
+    
+    ['luck', 'speed'].forEach(potionType => {
+        if (activePotions[potionType].active) {
+            const timeLeft = activePotions[potionType].endTime - now;
+            
+            if (timeLeft <= 0) {
+                // Potion expired
+                deactivatePotion(potionType);
+            } else {
+                activePotions[potionType].timeRemaining = timeLeft;
+                anyActive = true;
+            }
+        }
+    });
+    
+    // Stop timer if no potions are active
+    if (!anyActive && potionTimerInterval) {
+        clearInterval(potionTimerInterval);
+        potionTimerInterval = null;
+    }
+    
+    updatePotionDisplay();
+}
+
+function deactivatePotion(potionType) {
+    console.log(`🧪 ${potionType} potion expired`);
+    
+    activePotions[potionType].active = false;
+    activePotions[potionType].endTime = null;
+    activePotions[potionType].timeRemaining = 0;
+    
+    // Save potion state
+    savePotionState();
+    
+    // Update UI
+    updatePotionDisplay();
+    
+    // Show expiration message
+    const potionName = potionType === 'luck' ? 'Luck Potion' : 'Speed Potion';
+    setTimeout(() => {
+        alert(`⏰ ${potionName} has ended! Go buy more at Shop`);
+    }, 100);
+}
+
+function startPotionTimer() {
+    if (potionTimerInterval) return; // Already running
+    
+    potionTimerInterval = setInterval(() => {
+        updatePotionTimers();
+    }, 1000); // Update every second
+}
+
+function formatPotionTime(milliseconds) {
+    const totalSeconds = Math.ceil(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else if (minutes >= 10) {
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+function updatePotionDisplay() {
+    const potionContainer = document.getElementById('potion-timers');
+    if (!potionContainer) return;
+    
+    let html = '';
+    
+    if (activePotions.luck.active) {
+        const timeStr = formatPotionTime(activePotions.luck.timeRemaining);
+        html += `
+            <div class="potion-timer luck-potion">
+                <img src="Potion_of_Luck_JE3-removebg-preview.png" alt="Luck Potion" class="potion-icon">
+                <span class="potion-time">${timeStr}</span>
+            </div>
+        `;
+    }
+    
+    if (activePotions.speed.active) {
+        const timeStr = formatPotionTime(activePotions.speed.timeRemaining);
+        html += `
+            <div class="potion-timer speed-potion">
+                <img src="Splash_Potion_of_Swiftness_JE3-removebg-preview.png" alt="Speed Potion" class="potion-icon">
+                <span class="potion-time">${timeStr}</span>
+            </div>
+        `;
+    }
+    
+    potionContainer.innerHTML = html;
+}
+
+function savePotionState() {
+    localStorage.setItem('activePotions', JSON.stringify(activePotions));
+}
+
+function loadPotionState() {
+    const saved = localStorage.getItem('activePotions');
+    if (saved) {
+        try {
+            const savedPotions = JSON.parse(saved);
+            const now = Date.now();
+            
+            ['luck', 'speed'].forEach(potionType => {
+                if (savedPotions[potionType] && savedPotions[potionType].active && savedPotions[potionType].endTime) {
+                    if (savedPotions[potionType].endTime > now) {
+                        // Potion still active
+                        activePotions[potionType] = savedPotions[potionType];
+                        activePotions[potionType].timeRemaining = savedPotions[potionType].endTime - now;
+                    }
+                }
+            });
+            
+            // Start timer if any potions are active
+            if (activePotions.luck.active || activePotions.speed.active) {
+                startPotionTimer();
+            }
+            
+            updatePotionDisplay();
+        } catch (error) {
+            console.error('Error loading potion state:', error);
+        }
+    }
 }
 
 // Function to format price with K, M, B, T, Q, etc. for larger denominations - FIXED to handle NaN
@@ -731,6 +979,43 @@ window.lootBoxConsole = {
             
             return false;
         }
+    },
+    
+    // NEW: Test potion system
+    testPotions: function() {
+        console.log('🧪 [TEST] Testing potion system...');
+        
+        // Test luck potion
+        console.log('🧪 [TEST] Activating luck potion for 30 seconds...');
+        activatePotion('luck');
+        
+        // Override the timer for testing (30 seconds instead of 20 minutes)
+        activePotions.luck.endTime = Date.now() + 30000;
+        savePotionState();
+        updatePotionDisplay();
+        
+        console.log('🧪 [TEST] Luck potion activated! Try rolling - you should only get Epic+ items.');
+        console.log('👁️ [TEST] Check bottom left corner for timer display.');
+        
+        return true;
+    },
+    
+    testSpeedPotion: function() {
+        console.log('🧪 [TEST] Testing speed potion...');
+        
+        // Test speed potion
+        console.log('🧪 [TEST] Activating speed potion for 30 seconds...');
+        activatePotion('speed');
+        
+        // Override the timer for testing (30 seconds instead of 20 minutes)
+        activePotions.speed.endTime = Date.now() + 30000;
+        savePotionState();
+        updatePotionDisplay();
+        
+        console.log('🧪 [TEST] Speed potion activated! Rolling should be ~70% faster now.');
+        console.log('👁️ [TEST] Check bottom left corner for timer display.');
+        
+        return true;
     },
     
     // NEW: Force sync local purchases to Supabase
@@ -1345,16 +1630,26 @@ function cleanupSpinningLine() {
     
     // Reset track
     track.classList.remove('spinning');
+    track.classList.remove('speed-potion-active');
     track.style.cssText = ''; // Clear ALL inline styles
     track.innerHTML = '';
     
     // Force reflow to ensure cleanup takes effect
     track.offsetHeight;
     
-    // Clear pending item
+        // Clear pending item
     if (window.pendingHighStakesItem) {
         console.log(`🗑️ Clearing pending item: ${window.pendingHighStakesItem.name}`);
-    window.pendingHighStakesItem = null;
+        window.pendingHighStakesItem = null;
+    }
+    
+    // Clear spin state tracking
+    currentSpinState.isSpinning = false;
+    currentSpinState.startTime = null;
+    currentSpinState.duration = null;
+    if (currentSpinState.timeoutId) {
+        clearTimeout(currentSpinState.timeoutId);
+        currentSpinState.timeoutId = null;
     }
     
     console.log('✅ Spinning line NUKED and cleaned up');
@@ -1372,6 +1667,7 @@ function startSpinningLine() {
     
     // NUCLEAR RESET - Force complete reset
     track.classList.remove('spinning');
+    track.classList.remove('speed-potion-active');
     track.style.cssText = ''; // Clear all inline styles
     track.innerHTML = '';
     
@@ -1407,24 +1703,70 @@ function startSpinningLine() {
     // Force another reflow after adding content
     track.offsetHeight;
     
+    // Random duration - adjusted for speed potion  
+    let baseDuration;
+    if (activePotions.speed.active) {
+        // Speed potion: 70% faster = 8s / 1.7 ≈ 4.7s
+        baseDuration = Math.random() * 1765 + 2941; // Random between ~2.9-4.7 seconds
+        console.log('🧪 Speed potion active - using faster duration:', baseDuration);
+    } else {
+        // Normal: between 5-8 seconds
+        baseDuration = Math.random() * 3000 + 5000;
+        console.log('⏱️ Normal duration:', baseDuration);
+    }
+    const duration = baseDuration;
+    
+    // Initialize spin state tracking
+    currentSpinState.isSpinning = true;
+    currentSpinState.startTime = Date.now();
+    currentSpinState.duration = duration + 100; // Include the 100ms delay
+    
     // Start spinning with proper reset
     setTimeout(() => {
         console.log('Starting fresh animation with randomized items');
         track.classList.add('spinning');
+        
+        // Add speed class if speed potion is active
+        if (activePotions.speed.active) {
+            track.classList.add('speed-potion-active');
+            console.log('🧪 Added speed-potion-active class - animation should be faster');
+        }
     }, 100);
     
-    // Random duration between 5-8 seconds (under 8s animation duration)
-    const duration = Math.random() * 3000 + 5000;
-    
-    // Stop animation and select item
-    setTimeout(() => {
+    // Stop animation and select item - using tracked timeout
+    currentSpinState.timeoutId = setTimeout(() => {
         console.log('Stopping animation and selecting item');
         selectWinningItem();
-    }, duration);
+    }, duration + 100);
 }
 
 // Function to get weighted random item based on rarity percentages
 function getWeightedRandomItem() {
+    // Check if Luck Potion is active (Epic+ only)
+    if (activePotions.luck.active) {
+        const rand = Math.random() * 100;
+        
+        if (rand < 60) {
+            // Epic: 60% (when luck potion is active)
+            return getRandomItem(items.epic);
+        } else if (rand < 90) {
+            // Legendary: 30% (60 + 30 = 90)
+            return getRandomItem(items.legendary);
+        } else {
+            // Mythic: 10% (90 + 10 = 100)
+            // Use special High Stakes mythic rates occasionally for the special items
+            const mythicRand = Math.random();
+            if (mythicRand < 0.02) { // 2% chance for Diablo Sword within mythic category
+                return items.mythic.find(item => item.name === "Diablo Sword");
+            } else if (mythicRand < 0.09) { // 7% chance for N.U.K.E within mythic category  
+                return items.mythic.find(item => item.name === "N.U.K.E");
+            } else {
+                return getRandomItem(items.mythic);
+            }
+        }
+    }
+    
+    // Normal rarity distribution (no luck potion)
     const rand = Math.random() * 100;
     
     if (rand < 55) {
@@ -1469,8 +1811,18 @@ function selectWinningItem() {
     
     console.log('🛑 Starting item selection process...');
     
+    // Clear spin state tracking - spinning is now complete
+    currentSpinState.isSpinning = false;
+    currentSpinState.startTime = null;
+    currentSpinState.duration = null;
+    if (currentSpinState.timeoutId) {
+        clearTimeout(currentSpinState.timeoutId);
+        currentSpinState.timeoutId = null;
+    }
+    
     // FORCE STOP animation completely with multiple methods
     track.classList.remove('spinning');
+    track.classList.remove('speed-potion-active');
     track.style.animation = 'none !important';
     track.style.animationPlayState = 'paused !important';
     track.style.webkitAnimation = 'none !important';
@@ -1743,12 +2095,16 @@ async function showShopModal() {
                 <div class="shop-item-price">${formatPrice(itemData.price)}</div>
             </div>
             <div class="shop-item-actions">
-                ${isPurchased 
-                    ? `<span class="purchased-label">Purchased</span>
-                       ${itemId === 'autoKeep' ? '<button class="shop-item-btn settings-btn" onclick="showAutoKeepSettings()">⚙️</button>' : ''}`
-                    : `<button class="shop-item-btn buy-btn" ${!canAfford ? 'disabled' : ''} onclick="attemptPurchase('${itemId}')">
+                ${itemData.consumable 
+                    ? `<button class="shop-item-btn buy-btn" ${!canAfford ? 'disabled' : ''} onclick="attemptPurchase('${itemId}')">
                         ${canAfford ? 'Buy' : 'Too Poor'}
                        </button>`
+                    : isPurchased 
+                        ? `<span class="purchased-label">Purchased</span>
+                           ${itemId === 'autoKeep' ? '<button class="shop-item-btn settings-btn" onclick="showAutoKeepSettings()">⚙️</button>' : ''}`
+                        : `<button class="shop-item-btn buy-btn" ${!canAfford ? 'disabled' : ''} onclick="attemptPurchase('${itemId}')">
+                            ${canAfford ? 'Buy' : 'Too Poor'}
+                           </button>`
                 }
             </div>
         `;
@@ -1777,16 +2133,16 @@ async function attemptPurchase(itemId) {
         return;
     }
     
-    // Check if item is already purchased (protection against double-purchase bug)
+    // Check if item is already purchased (but not for consumables)
     const currentPurchases = JSON.parse(localStorage.getItem('highStakesShopPurchases')) || {};
-    if (currentPurchases[itemId]) {
+    if (!shopItems[itemId].consumable && currentPurchases[itemId]) {
         console.log(`🛒 [PURCHASE] ❌ Item ${itemId} already purchased, aborting`);
         alert(`You already own ${shopItems[itemId].name}! If this is wrong, try refreshing the page.`);
         return;
     }
     
-    // If user is logged in, double-check with Supabase to prevent conflicts
-    if (window.currentUser) {
+    // If user is logged in, double-check with Supabase to prevent conflicts (but not for consumables)
+    if (window.currentUser && !shopItems[itemId].consumable) {
         try {
             console.log(`🛒 [PURCHASE] Double-checking purchase status with Supabase...`);
             const supabaseOwned = await window.checkShopPurchaseFromSupabase(window.currentUser.id, itemId);
@@ -1941,15 +2297,27 @@ async function completePurchase(itemId, itemsToRemove) {
     
     console.log(`🛒 [COMPLETE] Items removed from inventory:`, itemsRemoved);
     
-    // Save purchase state to localStorage
-    const savedPurchases = JSON.parse(localStorage.getItem('highStakesShopPurchases')) || {};
-    savedPurchases[itemId] = true;
-    localStorage.setItem('highStakesShopPurchases', JSON.stringify(savedPurchases));
+    // Handle the purchase based on item type
+    const itemData = shopItems[itemId];
     
-    console.log(`🛒 [COMPLETE] Purchase saved to localStorage`);
+    if (itemData.consumable) {
+        // For consumables (potions), activate the effect instead of marking as purchased
+        if (itemId === 'luckPotion') {
+            activatePotion('luck');
+        } else if (itemId === 'speedPotion') {
+            activatePotion('speed');
+        }
+        console.log(`🛒 [COMPLETE] Consumable ${itemId} activated`);
+    } else {
+        // For permanent items, save purchase state
+        const savedPurchases = JSON.parse(localStorage.getItem('highStakesShopPurchases')) || {};
+        savedPurchases[itemId] = true;
+        localStorage.setItem('highStakesShopPurchases', JSON.stringify(savedPurchases));
+        console.log(`🛒 [COMPLETE] Purchase saved to localStorage`);
+    }
     
-    // Save purchase to Supabase if user is logged in AND table exists (with timeout)
-    if (window.currentUser && !window.supabaseShopDisabled) {
+    // Save purchase to Supabase if user is logged in AND table exists (but only for non-consumables)
+    if (!itemData.consumable && window.currentUser && !window.supabaseShopDisabled) {
         console.log(`🛒 [COMPLETE] Saving to Supabase for user: ${window.currentUser.email}`);
         
         // Use Promise.race to add timeout protection
@@ -1971,6 +2339,8 @@ async function completePurchase(itemId, itemsToRemove) {
             }
             // Continue anyway - don't let Supabase errors block the purchase
         }
+    } else if (itemData.consumable) {
+        console.log(`🛒 [COMPLETE] Skipping Supabase save for consumable item`);
     } else if (window.supabaseShopDisabled) {
         console.log(`🛒 [COMPLETE] Skipping Supabase save - shop table disabled for this session`);
     }
@@ -2009,9 +2379,14 @@ async function completePurchase(itemId, itemsToRemove) {
         .join(', ');
     
     console.log(`🛒 [COMPLETE] Showing success message`);
-    alert(`✅ Successfully purchased ${shopItems[itemId].name}!\nRemoved: ${removedText}`);
     
-    console.log(`🛒 [COMPLETE] ✅ Purchase complete: ${shopItems[itemId].name}`);
+    if (itemData.consumable) {
+        // Don't show purchase success for consumables - the potion activation handles the message
+        console.log(`🛒 [COMPLETE] ✅ Consumable activated: ${shopItems[itemId].name}`);
+    } else {
+        alert(`✅ Successfully purchased ${shopItems[itemId].name}!\nRemoved: ${removedText}`);
+        console.log(`🛒 [COMPLETE] ✅ Purchase complete: ${shopItems[itemId].name}`);
+    }
 }
 
 // Auto Click functionality for High Stakes mode with better interval management
@@ -2046,7 +2421,15 @@ function toggleHighStakesAutoClicker() {
         isHighStakesAutoClickerActive = false;
         console.log('🔄 [HIGH STAKES AUTO] Stopped');
     } else {
-        // Start auto clicker - open a loot box every 8.5 seconds in High Stakes mode
+        // Start auto clicker - timing synced with speed potion
+        const getAutoClickInterval = () => {
+            if (activePotions.speed.active) {
+                return 4700; // ~4.7 seconds when speed potion is active
+            } else {
+                return 8500; // Normal 8.5 seconds
+            }
+        };
+        
         highStakesAutoClickerInterval = setInterval(() => {
             console.log('🔄 [HIGH STAKES AUTO] Tick - attempting click');
             const openBoxBtn = document.getElementById('open-box-btn');
@@ -2056,7 +2439,7 @@ function toggleHighStakesAutoClicker() {
             } else {
                 console.log('🔄 [HIGH STAKES AUTO] Cannot click - button disabled or not in High Stakes mode');
             }
-        }, 8500);
+        }, getAutoClickInterval());
         
         if (autoClickerBtn) {
             autoClickerBtn.textContent = 'Stop Auto Clicker';
@@ -2198,15 +2581,20 @@ window.attemptPurchase = attemptPurchase;
 window.showAutoKeepSettings = showAutoKeepSettings;
 window.toggleAutoKeepItem = toggleAutoKeepItem;
 window.toggleHighStakesAutoClicker = toggleHighStakesAutoClicker;
+window.activatePotion = activatePotion;
+window.updatePotionDisplay = updatePotionDisplay;
 
 
 
- document.addEventListener('DOMContentLoaded', () => {
-     console.log('🚀 DOM Content Loaded - initializing buttons...');
+document.addEventListener('DOMContentLoaded', () => {
+     console.log('🚀 DOM Content Loaded - initializing buttons and potion system...');
+     
+     // Initialize potion system
+     loadPotionState();
      
      // Auto Clicker button
-     const autoClickerBtn = document.getElementById('auto-clicker-btn');
-     if (autoClickerBtn) {
+    const autoClickerBtn = document.getElementById('auto-clicker-btn');
+    if (autoClickerBtn) {
          autoClickerBtn.addEventListener('click', () => {
              if (isHighStakesMode) {
                  toggleHighStakesAutoClicker();
@@ -2217,9 +2605,9 @@ window.toggleHighStakesAutoClicker = toggleHighStakesAutoClicker;
      }
      
      // High Stakes button
-     const highStakesBtn = document.getElementById('high-stakes-btn');
-     if (highStakesBtn) {
-         highStakesBtn.addEventListener('click', toggleHighStakesMode);
+    const highStakesBtn = document.getElementById('high-stakes-btn');
+    if (highStakesBtn) {
+        highStakesBtn.addEventListener('click', toggleHighStakesMode);
      }
      
      // Shop button

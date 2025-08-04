@@ -59,7 +59,7 @@ CREATE POLICY "Users can delete their own high stakes mode state" ON high_stakes
 CREATE TABLE IF NOT EXISTS high_stakes_shop_purchases (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    item_id TEXT NOT NULL CHECK (item_id IN ('autoClick', 'autoKeep')),
+    item_id TEXT NOT NULL CHECK (item_id IN ('autoClick', 'autoKeep', 'luckPotion', 'speedPotion')),
     purchased_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     UNIQUE(user_id, item_id)
 );
