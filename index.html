@@ -196,6 +196,30 @@
         window.checkShopPurchaseFromSupabase = checkShopPurchaseFromSupabase;
         window.checkShopTableExists = checkShopTableExists;
         
+        // Debug function to check if shop table exists
+        window.checkShopTable = async () => {
+            if (!window.currentUser) {
+                console.log('❌ No user logged in - cannot check shop table');
+                return false;
+            }
+            
+            console.log('🔍 Checking if shop table exists...');
+            const exists = await checkShopTableExists();
+            
+            if (exists) {
+                console.log('✅ Shop table exists and is working!');
+                return true;
+            } else {
+                console.log('❌ Shop table does not exist!');
+                console.log('💡 To fix this, go to your Supabase dashboard:');
+                console.log('1. Open your Supabase project');
+                console.log('2. Go to SQL Editor');
+                console.log('3. Run the SQL from high_stakes_supabase.sql file');
+                console.log('4. Look for the "high_stakes_shop_purchases" table section');
+                return false;
+            }
+        };
+        
         // Debug function to clear inventories table
         window.clearSupabaseInventories = async () => {
             if (!window.currentUser) {

@@ -131,6 +131,9 @@ let shopPurchases = JSON.parse(localStorage.getItem('highStakesShopPurchases')) 
 let highStakesAutoClickerInterval = null;
 let isHighStakesAutoClickerActive = false;
 
+// Flag to disable Supabase shop functions if table doesn't exist
+window.supabaseShopDisabled = false;
+
 // DOM elements
 const lootBox = document.getElementById('loot-box');
 const openBoxBtn = document.getElementById('open-box-btn');
@@ -258,7 +261,7 @@ async function addToInventory(itemName, rarity, count = 1) {
     if (isHighStakesMode) {
         localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
     } else {
-        localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
     }
     
     // Save to Supabase if user is logged in
@@ -369,7 +372,7 @@ function updateInventoryDisplay() {
                 }
             }
             
-            // If that fails, search through all rarities
+                // If that fails, search through all rarities
             if (imageUrl === 'default.png') {
                 for (const rarity in items) {
                     if (Array.isArray(items[rarity])) {
@@ -480,7 +483,7 @@ async function removeItem(itemName, count = 1) {
     if (isHighStakesMode) {
         localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
     } else {
-        localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
     }
     
     // Save to Supabase if user is logged in
@@ -540,11 +543,11 @@ window.lootBoxConsole = {
         }
         
         // Save to appropriate storage
-        if (isHighStakesMode) {
-            localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
-        } else {
-            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-        }
+    if (isHighStakesMode) {
+        localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
+    } else {
+        localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+    }
         
         // 🔥 ALSO SAVE TO SUPABASE if user is logged in
         if (window.currentUser) {
@@ -562,10 +565,10 @@ window.lootBoxConsole = {
         }
         
         // Update the inventory display
-        updateInventoryDisplay();
+    updateInventoryDisplay();
         
         console.log(`✅ Successfully removed ${count} ${itemName}(s) from your inventory`);
-        return true;
+    return true;
     },
     
     // Fixed addItem - properly adds items with correct count and rarity
@@ -792,14 +795,8 @@ window.lootBoxConsole = {
         console.log('🔧 Login Button:', loginBtn ? 'EXISTS' : 'MISSING');
         console.log('🔧 Logout Button:', logoutBtn ? 'EXISTS' : 'MISSING');
         
-        // Try to refresh listeners
-        console.log('🔧 Refreshing button listeners...');
-        if (window.setupButtonListeners) {
-            window.setupButtonListeners();
-            console.log('✅ Button listeners refreshed');
-        } else {
-            console.log('❌ setupButtonListeners not available');
-        }
+                 // Basic button check
+         console.log('🔧 Basic button status check complete');
         
         return true;
     }
@@ -867,7 +864,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             // Save to Supabase if user is logged in
@@ -899,7 +896,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -929,7 +926,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -959,7 +956,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -989,7 +986,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -1019,7 +1016,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -1049,7 +1046,7 @@ async function handleConversion(itemType, amount) {
             if (isHighStakesMode) {
                 localStorage.setItem('highStakesInventory', JSON.stringify(inventory));
             } else {
-                localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+            localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
             }
             
             if (window.currentUser) {
@@ -1086,14 +1083,14 @@ function toggleAutoClicker() {
     if (isAutoClickerActive) {
         // Stop auto clicker
         if (autoClickerInterval) {
-            clearInterval(autoClickerInterval);
+        clearInterval(autoClickerInterval);
             autoClickerInterval = null;
             console.log('🔄 [AUTO CLICKER] Interval cleared');
         }
         
         if (autoClickerBtn) {
-            autoClickerBtn.textContent = 'Auto Clicker';
-            autoClickerBtn.classList.remove('active');
+        autoClickerBtn.textContent = 'Auto Clicker';
+        autoClickerBtn.classList.remove('active');
         }
         
         isAutoClickerActive = false;
@@ -1112,10 +1109,10 @@ function toggleAutoClicker() {
         }, 2500);
         
         if (autoClickerBtn) {
-            autoClickerBtn.textContent = 'Stop Auto Clicker';
-            autoClickerBtn.classList.add('active');
-        }
-        
+        autoClickerBtn.textContent = 'Stop Auto Clicker';
+        autoClickerBtn.classList.add('active');
+    }
+    
         isAutoClickerActive = true;
         console.log('🔄 [AUTO CLICKER] Started with interval ID:', autoClickerInterval);
     }
@@ -1152,7 +1149,7 @@ async function enterHighStakesMode() {
             if (supabaseInventory && Object.keys(supabaseInventory).length > 0) {
                 // User has existing High Stakes inventory
                 highStakesInventory = supabaseInventory;
-                inventory = highStakesInventory;
+            inventory = highStakesInventory;
                 console.log('✅ Loaded existing High Stakes inventory:', Object.keys(inventory).length, 'items');
             } else {
                 // User has no High Stakes inventory yet - start with empty inventory
@@ -1208,7 +1205,7 @@ async function enterHighStakesMode() {
     const localPurchases = JSON.parse(localStorage.getItem('highStakesShopPurchases')) || {};
     let finalPurchases = localPurchases;
     
-    if (window.currentUser) {
+    if (window.currentUser && !window.supabaseShopDisabled) {
         try {
             console.log('🛒 Loading shop purchases from Supabase...');
             const supabasePurchases = await window.loadShopPurchasesFromSupabase(window.currentUser.id);
@@ -1223,7 +1220,15 @@ async function enterHighStakesMode() {
         } catch (error) {
             console.error('🛒 ❌ Error loading shop purchases from Supabase:', error);
             console.log('🛒 Using localStorage purchases only');
+            
+            // If table doesn't exist, disable Supabase shop for session
+            if (error.message && (error.message.includes('does not exist') || error.message.includes('Not Acceptable'))) {
+                console.warn('🛒 ⚠️ Disabling Supabase shop functions due to missing table');
+                window.supabaseShopDisabled = true;
+            }
         }
+    } else if (window.supabaseShopDisabled) {
+        console.log('🛒 Supabase shop disabled - using localStorage only');
     }
     
     // Apply shop purchase effects
@@ -1251,11 +1256,6 @@ async function enterHighStakesMode() {
     }
     
     updateInventoryDisplay();
-    
-    // Refresh button listeners after mode switch
-    if (typeof setupButtonListeners === 'function') {
-        setTimeout(() => setupButtonListeners(), 100);
-    }
     
     console.log('🎰 ✅ HIGH STAKES MODE ENTERED SUCCESSFULLY 🎰');
     console.log('Final inventory after switch:', Object.keys(inventory).length, 'items');
@@ -1322,11 +1322,6 @@ async function exitHighStakesMode() {
     
     updateInventoryDisplay();
     
-    // Refresh button listeners after mode switch
-    if (typeof setupButtonListeners === 'function') {
-        setTimeout(() => setupButtonListeners(), 100);
-    }
-    
     console.log('Exited High Stakes Mode');
 }
 
@@ -1359,7 +1354,7 @@ function cleanupSpinningLine() {
     // Clear pending item
     if (window.pendingHighStakesItem) {
         console.log(`🗑️ Clearing pending item: ${window.pendingHighStakesItem.name}`);
-        window.pendingHighStakesItem = null;
+    window.pendingHighStakesItem = null;
     }
     
     console.log('✅ Spinning line NUKED and cleaned up');
@@ -1520,7 +1515,7 @@ function selectWinningItem() {
         });
         
         console.log(`👁️ Visible squares: ${visibleSquares}, Closest distance: ${closestDistance.toFixed(1)}px`);
-        
+            
         // Highlight selected item ONLY if one was found
         if (winningSquare) {
             // Validate that we have the required data
@@ -1530,7 +1525,7 @@ function selectWinningItem() {
             if (selectedItemName && selectedItemRarity) {
                 // Clear any previous selection first
                 document.querySelectorAll('.item-square.selected').forEach(sq => sq.classList.remove('selected'));
-                
+            
                 // Add the yellow highlight (selected class)
                 winningSquare.classList.add('selected');
                 
@@ -1690,7 +1685,7 @@ async function showShopModal() {
     
     console.log(`🛒 [MODAL] Local purchases:`, Object.keys(localPurchases));
     
-    if (window.currentUser) {
+    if (window.currentUser && !window.supabaseShopDisabled) {
         try {
             console.log(`🛒 [MODAL] Loading shop purchases from Supabase for user: ${window.currentUser.email}`);
             
@@ -1714,8 +1709,16 @@ async function showShopModal() {
         } catch (error) {
             console.error('🛒 [MODAL] ❌ Error loading shop purchases from Supabase:', error);
             console.log('🛒 [MODAL] Using localStorage purchases only');
+            
+            // If table doesn't exist, disable Supabase shop for session
+            if (error.message && (error.message.includes('does not exist') || error.message.includes('Not Acceptable'))) {
+                console.warn('🛒 [MODAL] ⚠️ Disabling Supabase shop functions due to missing table');
+                window.supabaseShopDisabled = true;
+            }
             // Continue with local purchases only
         }
+    } else if (window.supabaseShopDisabled) {
+        console.log(`🛒 [MODAL] Supabase shop disabled - using localStorage only`);
     } else {
         console.log(`🛒 [MODAL] No user logged in, using localStorage only`);
     }
@@ -1803,6 +1806,12 @@ async function attemptPurchase(itemId) {
         } catch (error) {
             console.error(`🛒 [PURCHASE] ❌ Error checking Supabase purchase status:`, error);
             console.log(`🛒 [PURCHASE] Continuing with purchase despite Supabase check failure`);
+            
+            // CRITICAL: If it's a table missing error, skip Supabase entirely for this session
+            if (error.message && (error.message.includes('does not exist') || error.message.includes('Not Acceptable'))) {
+                console.warn('🛒 [PURCHASE] ⚠️ Shop table missing - disabling Supabase shop functions for this session');
+                window.supabaseShopDisabled = true;
+            }
         }
     }
     
@@ -1939,8 +1948,8 @@ async function completePurchase(itemId, itemsToRemove) {
     
     console.log(`🛒 [COMPLETE] Purchase saved to localStorage`);
     
-    // Save purchase to Supabase if user is logged in (with timeout)
-    if (window.currentUser) {
+    // Save purchase to Supabase if user is logged in AND table exists (with timeout)
+    if (window.currentUser && !window.supabaseShopDisabled) {
         console.log(`🛒 [COMPLETE] Saving to Supabase for user: ${window.currentUser.email}`);
         
         // Use Promise.race to add timeout protection
@@ -1954,8 +1963,16 @@ async function completePurchase(itemId, itemsToRemove) {
             console.log(`🛒 [COMPLETE] ✅ Shop purchase ${itemId} saved to Supabase`);
         } catch (error) {
             console.error(`🛒 [COMPLETE] ❌ Error saving shop purchase to Supabase:`, error);
+            
+            // If table doesn't exist, disable Supabase shop for session
+            if (error.message && (error.message.includes('does not exist') || error.message.includes('Not Acceptable'))) {
+                console.warn('🛒 [COMPLETE] ⚠️ Disabling Supabase shop functions due to missing table');
+                window.supabaseShopDisabled = true;
+            }
             // Continue anyway - don't let Supabase errors block the purchase
         }
+    } else if (window.supabaseShopDisabled) {
+        console.log(`🛒 [COMPLETE] Skipping Supabase save - shop table disabled for this session`);
     }
     
     // Show relevant UI elements after purchase
@@ -2182,73 +2199,34 @@ window.showAutoKeepSettings = showAutoKeepSettings;
 window.toggleAutoKeepItem = toggleAutoKeepItem;
 window.toggleHighStakesAutoClicker = toggleHighStakesAutoClicker;
 
-// Make button setup function globally accessible
-window.setupButtonListeners = setupButtonListeners;
 
-// Function to setup button listeners with proper cleanup
-function setupButtonListeners() {
-    console.log('🔧 Setting up button listeners...');
-    
-    // Auto Clicker button event listener with cleanup
-    const autoClickerBtn = document.getElementById('auto-clicker-btn');
-    if (autoClickerBtn) {
-        // Remove existing listener by replacing the element
-        autoClickerBtn.replaceWith(autoClickerBtn.cloneNode(true));
-        const newAutoClickerBtn = document.getElementById('auto-clicker-btn');
-        
-        newAutoClickerBtn.addEventListener('click', () => {
-            console.log('🔄 Auto Clicker button clicked');
-            try {
-                if (isHighStakesMode) {
-                    toggleHighStakesAutoClicker();
-                } else {
-                    toggleAutoClicker();
-                }
-            } catch (error) {
-                console.error('Error toggling auto clicker:', error);
-            }
-        });
-        console.log('🔄 Auto Clicker listener attached');
-    }
-    
-    // High Stakes button event listener with cleanup
-    const highStakesBtn = document.getElementById('high-stakes-btn');
-    console.log('🎰 High Stakes button found:', highStakesBtn);
-    if (highStakesBtn) {
-        // Remove existing listener by replacing the element
-        highStakesBtn.replaceWith(highStakesBtn.cloneNode(true));
-        const newHighStakesBtn = document.getElementById('high-stakes-btn');
-        
-        console.log('🎰 Adding click listener to High Stakes button');
-        newHighStakesBtn.addEventListener('click', () => {
-            console.log('🎰 High Stakes button clicked');
-            try {
-                toggleHighStakesMode();
-            } catch (error) {
-                console.error('Error toggling High Stakes mode:', error);
-            }
-        });
-        console.log('🎰 High Stakes listener attached');
-    } else {
-        console.error('🎰 High Stakes button not found!');
-    }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM Content Loaded - initializing buttons...');
-    setupButtonListeners();
-    
-    // Shop button event listener
-    const shopBtn = document.getElementById('shop-btn');
-    if (shopBtn) {
-        shopBtn.addEventListener('click', async () => {
-            try {
-                await showShopModal();
-            } catch (error) {
-                console.error('Error showing shop modal:', error);
-            }
-        });
-    }
+ document.addEventListener('DOMContentLoaded', () => {
+     console.log('🚀 DOM Content Loaded - initializing buttons...');
+     
+     // Auto Clicker button
+     const autoClickerBtn = document.getElementById('auto-clicker-btn');
+     if (autoClickerBtn) {
+         autoClickerBtn.addEventListener('click', () => {
+             if (isHighStakesMode) {
+                 toggleHighStakesAutoClicker();
+             } else {
+                 toggleAutoClicker();
+             }
+         });
+     }
+     
+     // High Stakes button
+     const highStakesBtn = document.getElementById('high-stakes-btn');
+     if (highStakesBtn) {
+         highStakesBtn.addEventListener('click', toggleHighStakesMode);
+     }
+     
+     // Shop button
+     const shopBtn = document.getElementById('shop-btn');
+     if (shopBtn) {
+         shopBtn.addEventListener('click', showShopModal);
+     }
     
     // Shop modal close button
     const closeShopBtn = document.getElementById('close-shop-btn');
@@ -2268,18 +2246,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmYesBtn = document.getElementById('confirm-yes-btn');
     const confirmNoBtn = document.getElementById('confirm-no-btn');
     
-    if (confirmYesBtn) {
-        confirmYesBtn.addEventListener('click', async () => {
-            if (window.pendingPurchase) {
-                try {
-                    await completePurchase(window.pendingPurchase.itemId, window.pendingPurchase.itemsToRemove);
-                } catch (error) {
-                    console.error('Error completing purchase:', error);
-                }
-                window.pendingPurchase = null;
-            }
-        });
-    }
+         if (confirmYesBtn) {
+         confirmYesBtn.addEventListener('click', () => {
+             if (window.pendingPurchase) {
+                 completePurchase(window.pendingPurchase.itemId, window.pendingPurchase.itemsToRemove);
+                 window.pendingPurchase = null;
+             }
+         });
+     }
     
     if (confirmNoBtn) {
         confirmNoBtn.addEventListener('click', () => {
@@ -2391,7 +2365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('An error occurred while keeping the item. Please try again.');
             } finally {
                 // Always reset the flag
-                keepActionInProgress = false;
+            keepActionInProgress = false;
             }
         });
     }

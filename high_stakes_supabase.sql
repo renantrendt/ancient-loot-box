@@ -54,6 +54,32 @@ CREATE POLICY "Users can update their own high stakes mode state" ON high_stakes
 CREATE POLICY "Users can delete their own high stakes mode state" ON high_stakes_mode_state
     FOR DELETE USING (auth.uid() = user_id);
 
+-- High Stakes Shop Purchases Table
+-- This table stores what shop items each user has purchased
+CREATE TABLE IF NOT EXISTS high_stakes_shop_purchases (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    item_id TEXT NOT NULL CHECK (item_id IN ('autoClick', 'autoKeep')),
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    UNIQUE(user_id, item_id)
+);
+
+-- Row Level Security for Shop Purchases
+ALTER TABLE high_stakes_shop_purchases ENABLE ROW LEVEL SECURITY;
+
+-- Shop Purchases Policies
+CREATE POLICY "Users can view their own shop purchases" ON high_stakes_shop_purchases
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own shop purchases" ON high_stakes_shop_purchases
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own shop purchases" ON high_stakes_shop_purchases
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own shop purchases" ON high_stakes_shop_purchases
+    FOR DELETE USING (auth.uid() = user_id);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_high_stakes_inventory_user_id ON high_stakes_inventory(user_id);
 CREATE INDEX IF NOT EXISTS idx_high_stakes_inventory_item_name ON high_stakes_inventory(item_name);
