@@ -59,6 +59,7 @@
         <button onclick="executeCommand('removeItem', 'Beer', 1)">Remove 1 Beer</button>
         <button onclick="executeCommand('removeItem', 'Helmet', 2)">Remove 2 Helmets</button>
         <button onclick="executeCommand('removeItem', 'Sword', 1)">Remove 1 Sword</button>
+        <button onclick="executeCommand('removeItem', 'Diablo Sword', 1)">Remove 1 Diablo Sword</button>
     </div>
     
     <div class="command-card">
@@ -69,6 +70,8 @@
         <button onclick="executeCommand('addItem', 'Beer', 'common', 5)">Add 5 Beers</button>
         <button onclick="executeCommand('addItem', 'Helmet', 'rare', 3)">Add 3 Helmets</button>
         <button onclick="executeCommand('addItem', 'Sword', 'rare', 2)">Add 2 Swords</button>
+        <button onclick="executeCommand('addItem', 'Diablo Sword', 'mythic', 1)">Add 1 Diablo Sword</button>
+        <button onclick="executeCommand('addItem', 'N.U.K.E', 'mythic', 1)">Add 1 N.U.K.E</button>
     </div>
     
     <div class="command-card">
@@ -79,120 +82,112 @@
         <p class="note">Warning: This will remove ALL items from your inventory!</p>
     </div>
     
+    <div class="command-card">
+        <h2>Debug Tools</h2>
+        <p>Debug and inspect your inventory:</p>
+        <code>lootBoxConsole.debug();</code>
+        <button onclick="executeCommand('debug')">Show Debug Info</button>
+        <p class="note">This will display detailed inventory information in the main game console.</p>
+    </div>
+    
     <div id="result" class="command-card" style="display: none;">
         <h2>Command Result</h2>
         <div id="result-content"></div>
     </div>
     
     <script>
-        // Create a global console object for the loot box
+        // FIXED Console Commands - Use the lootBoxConsole object from the main game
+        
         window.lootBoxConsole = {
-            removeItem: function(itemName, count = 1) {
+            removeItem: async function(itemName, count = 1) {
                 try {
-                    // Try to access the parent window's inventory
-                    const inventory = window.opener ? window.opener.inventory : window.parent.inventory;
+                    // Access the main game's lootBoxConsole
+                    const mainConsole = window.opener ? window.opener.lootBoxConsole : window.parent.lootBoxConsole;
                     
-                    if (!inventory) {
-                        return showResult(`Error: Cannot access inventory. Make sure the game is open in another tab.`);
+                    if (!mainConsole) {
+                        return showResult(`Error: Cannot access game console. Make sure the game is open in another tab.`);
                     }
                     
-                    // Check if the item exists
-                    if (!inventory[itemName]) {
-                        return showResult(`Error: ${itemName} not found in inventory`);
+                    // Use the fixed removeItem function (now async)
+                    const result = await mainConsole.removeItem(itemName, count);
+                    
+                    if (result) {
+                        showResult(`✅ Successfully removed ${count} ${itemName}(s) from your inventory`);
+                    } else {
+                        showResult(`❌ Failed to remove ${itemName} - check console for details`);
                     }
                     
-                    // Check if we have enough
-                    if (inventory[itemName].count < count) {
-                        return showResult(`Error: Not enough ${itemName} in inventory. You have ${inventory[itemName].count} but tried to remove ${count}`);
-                    }
-                    
-                    // Remove items
-                    inventory[itemName].count -= count;
-                    
-                    // If count reaches 0, remove the item entirely
-                    if (inventory[itemName].count <= 0) {
-                        delete inventory[itemName];
-                    }
-                    
-                    // Save to local storage
-                    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
-                    
-                    // Update the display if possible
-                    if (window.opener && window.opener.updateInventoryDisplay) {
-                        window.opener.updateInventoryDisplay();
-                    } else if (window.parent && window.parent.updateInventoryDisplay) {
-                        window.parent.updateInventoryDisplay();
-                    }
-                    
-                    showResult(`Successfully removed ${count} ${itemName}(s) from your inventory`);
-                    return true;
+                    return result;
                 } catch (error) {
                     showResult(`Error: ${error.message}`);
                     return false;
                 }
             },
             
-            addItem: function(itemName, rarity, count = 1) {
+            addItem: async function(itemName, rarity, count = 1) {
                 try {
-                    // Try to access the parent window's functions
-                    const addToInventory = window.opener ? window.opener.addToInventory : window.parent.addToInventory;
-                    const updateInventoryDisplay = window.opener ? window.opener.updateInventoryDisplay : window.parent.updateInventoryDisplay;
+                    // Access the main game's lootBoxConsole
+                    const mainConsole = window.opener ? window.opener.lootBoxConsole : window.parent.lootBoxConsole;
                     
-                    if (!addToInventory) {
-                        return showResult(`Error: Cannot access game functions. Make sure the game is open in another tab.`);
+                    if (!mainConsole) {
+                        return showResult(`Error: Cannot access game console. Make sure the game is open in another tab.`);
                     }
                     
-                    // Add items
-                    for (let i = 0; i < count; i++) {
-                        addToInventory(itemName, rarity);
+                    // Use the fixed addItem function (now async)
+                    const result = await mainConsole.addItem(itemName, rarity, count);
+                    
+                    if (result) {
+                        showResult(`✅ Successfully added ${count} ${itemName}(s) to your inventory`);
+                    } else {
+                        showResult(`❌ Failed to add ${itemName} - check console for details`);
                     }
                     
-                    // Update display
-                    if (updateInventoryDisplay) {
-                        updateInventoryDisplay();
-                    }
-                    
-                    showResult(`Successfully added ${count} ${itemName}(s) to your inventory`);
-                    return true;
+                    return result;
                 } catch (error) {
                     showResult(`Error: ${error.message}`);
                     return false;
                 }
             },
             
-            clearInventory: function() {
+            clearInventory: async function() {
                 try {
-                    // Try to access the parent window's inventory
-                    let inventory;
-                    let updateInventoryDisplay;
+                    // Access the main game's lootBoxConsole
+                    const mainConsole = window.opener ? window.opener.lootBoxConsole : window.parent.lootBoxConsole;
                     
-                    if (window.opener) {
-                        inventory = window.opener.inventory;
-                        updateInventoryDisplay = window.opener.updateInventoryDisplay;
-                    } else if (window.parent) {
-                        inventory = window.parent.inventory;
-                        updateInventoryDisplay = window.parent.updateInventoryDisplay;
+                    if (!mainConsole) {
+                        return showResult(`Error: Cannot access game console. Make sure the game is open in another tab.`);
                     }
                     
-                    if (!inventory) {
-                        return showResult(`Error: Cannot access inventory. Make sure the game is open in another tab.`);
+                    // Use the fixed clearInventory function (now async)
+                    const result = await mainConsole.clearInventory();
+                    
+                    if (result) {
+                        showResult(`✅ Successfully cleared your inventory`);
+                    } else {
+                        showResult(`❌ Failed to clear inventory - check console for details`);
                     }
                     
-                    // Clear inventory
-                    for (const key in inventory) {
-                        delete inventory[key];
+                    return result;
+                } catch (error) {
+                    showResult(`Error: ${error.message}`);
+                    return false;
+                }
+            },
+            
+            debug: function() {
+                try {
+                    // Access the main game's lootBoxConsole
+                    const mainConsole = window.opener ? window.opener.lootBoxConsole : window.parent.lootBoxConsole;
+                    
+                    if (!mainConsole) {
+                        return showResult(`Error: Cannot access game console. Make sure the game is open in another tab.`);
                     }
                     
-                    // Save to local storage
-                    localStorage.setItem('lootBoxInventory', JSON.stringify(inventory));
+                    // Use the debug function (not async)
+                    const result = mainConsole.debug();
+                    showResult(`🔍 Debug info displayed in main game console`);
                     
-                    // Update display
-                    if (updateInventoryDisplay) {
-                        updateInventoryDisplay();
-                    }
-                    
-                    showResult(`Successfully cleared your inventory`);
-                    return true;
+                    return result;
                 } catch (error) {
                     showResult(`Error: ${error.message}`);
                     return false;
@@ -200,9 +195,15 @@
             }
         };
         
-        function executeCommand(command, ...args) {
+        async function executeCommand(command, ...args) {
             if (lootBoxConsole[command]) {
-                lootBoxConsole[command](...args);
+                try {
+                    // Handle async functions
+                    const result = await lootBoxConsole[command](...args);
+                    // Result messages are already handled by the individual functions
+                } catch (error) {
+                    showResult(`Error: ${error.message}`);
+                }
             } else {
                 showResult(`Error: Command "${command}" not found`);
             }
